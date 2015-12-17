@@ -27,12 +27,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\Az_PowerShell\VM IaaS\install-ftp2blob-bridge.ps1">
-      <Link>install-ftp2blob-bridge.ps1</Link>
-    </Compile>
-    <Compile Include="..\..\Az_PowerShell\VM IaaS\provision-ftp-server.ps1">
-      <Link>provision-ftp-server.ps1</Link>
-    </Compile>
+    <Compile Include="install-ftp2blob-bridge.ps1" />
+    <Compile Include="provision-ftp-server.ps1" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="Build" />
