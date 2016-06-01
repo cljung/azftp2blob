@@ -58,11 +58,16 @@ namespace AzureFtpServer.Provider {
         private void Initialise(string containerName)
         {
             if (String.IsNullOrEmpty(containerName))
-                throw new ArgumentException("You must provide the base Container Name", "containerName");
-            
+            {
+                throw new ArgumentException("You must provide the base Container Name", nameof(containerName));
+            }
+
             ContainerName = containerName;
 
-            _account = CloudStorageAccount.Parse(ConfigurationManager.AppSettings["StorageAccount"]);
+            string connString = StorageProviderConfiguration.Mode == Modes.Debug
+                ? "UseDevelopmentStorage=true"
+                : ConfigurationManager.AppSettings["StorageAccount"];
+            _account = CloudStorageAccount.Parse(connString);
             _blobClient = _account.CreateCloudBlobClient();
             //_blobClient..Timeout = new TimeSpan(0, 0, 0, 5);
 
