@@ -6,6 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Diagnostics;
 using System.Configuration;
+using System.Net;
 using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.General;
 using AzureFtpServer.FtpCommands;
@@ -112,7 +113,8 @@ namespace AzureFtpServer.Ftp
             // listen at the port by the "FTP" endpoint setting
             int port = int.Parse(ConfigurationManager.AppSettings["FTP"]);
             System.Net.IPAddress ipaddr = SocketHelpers.GetLocalAddress();
-            System.Net.IPEndPoint ipEndPoint = new System.Net.IPEndPoint(ipaddr.Address, port);
+            //System.Net.IPEndPoint ipEndPoint = new System.Net.IPEndPoint(ipaddr.Address, port);
+            System.Net.IPEndPoint ipEndPoint = new System.Net.IPEndPoint(IPAddress.Any, port);
             FtpServer.m_ftpIpAddr = ipaddr.ToString();
             m_socketListen = SocketHelpers.CreateTcpListener(ipEndPoint);
 
@@ -244,6 +246,13 @@ namespace AzureFtpServer.Ftp
 
             try
             {
+                string dirPath = Path.IsPathRooted(m_logPath) ? m_logPath : Path.GetFullPath(m_logPath);
+                if (!Directory.Exists(dirPath))
+                {
+                    Trace.TraceInformation($"creating log directory {dirPath}");
+                    Directory.CreateDirectory(dirPath);
+                }
+
                 string filename = Path.Combine(FtpServer.m_logPath, "testfile.txt");
                 File.WriteAllText(filename, "test content to see if we have write access");
                 File.Delete(filename);

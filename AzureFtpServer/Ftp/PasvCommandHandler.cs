@@ -37,8 +37,9 @@ namespace AzureFtpServer.FtpCommands
 
             // listen at the port by the "FTP" endpoint setting
             int port = int.Parse(ConfigurationManager.AppSettings["FTPPASV"]);
-            System.Net.IPAddress ipaddr = SocketHelpers.GetLocalAddress();
-            System.Net.IPEndPoint ipEndPoint = new System.Net.IPEndPoint(ipaddr.Address, port);
+            //System.Net.IPAddress ipaddr = SocketHelpers.GetLocalAddress();
+            //System.Net.IPEndPoint ipEndPoint = new System.Net.IPEndPoint(ipaddr.Address, port);
+            System.Net.IPEndPoint ipEndPoint = new System.Net.IPEndPoint(IPAddress.Any, port);
 
             TcpListener listener = SocketHelpers.CreateTcpListener( ipEndPoint );
 
