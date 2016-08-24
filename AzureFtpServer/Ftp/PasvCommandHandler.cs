@@ -46,18 +46,24 @@ namespace AzureFtpServer.FtpCommands
             if (listener == null)
             {
                 FtpServer.LogWrite(this, sMessage, 550, 0);
-                return GetMessage(550, string.Format("Couldn't start listener on port {0}", m_nPort));
+                return GetMessage(550, $"Couldn't start listener on port {m_nPort}");
             }
-            Trace.TraceInformation(string.Format("Entering Passive Mode on {0}", pasvListenAddress));
-            SocketHelpers.Send(ConnectionObject.Socket, string.Format("227 Entering Passive Mode ({0})\r\n", pasvListenAddress), ConnectionObject.Encoding);
 
-            listener.Start();
+            try
+            {
+                Trace.TraceInformation($"Entering Passive Mode on {pasvListenAddress}");
+                SocketHelpers.Send(ConnectionObject.Socket, $"227 Entering Passive Mode ({pasvListenAddress})\r\n",
+                    ConnectionObject.Encoding);
 
-            ConnectionObject.PassiveSocket = listener.AcceptTcpClient();
+                listener.Start();
 
-            listener.Stop();
-
-            sw.Stop();
+                ConnectionObject.PassiveSocket = listener.AcceptTcpClient();
+            }
+            finally
+            {
+                listener.Stop();
+                sw.Stop();
+            }
             FtpServer.LogWrite(this, sMessage, 0, sw.ElapsedMilliseconds);
 
             return "";
