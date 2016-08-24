@@ -128,12 +128,6 @@ namespace AzureFtpServer.Azure
         {
             _provider.UploadNotification(sPath);
         }
-
-        public void SetFileMd5(string sPath, string md5Value)
-        {
-            _provider.SetBlobMd5(sPath, md5Value);
-        }
-
         #endregion
     }
 }

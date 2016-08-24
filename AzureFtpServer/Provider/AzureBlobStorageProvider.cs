@@ -78,10 +78,10 @@ namespace AzureFtpServer.Provider {
                 _container.FetchAttributes();
                 //sasUrl = GetContainerSasUri(_container);
             }
-            catch (StorageException)
+            catch (StorageException se)
             {
-                Trace.WriteLine(string.Format("Create new container: {0}", ContainerName), "Information");
-                _container.Create();
+                Trace.WriteLine($"Create new container: {ContainerName}", "Information");
+                _container.CreateIfNotExists();
 
                 // set new container's permissions
                 // Create a permission policy to set the public access setting for the container. 
@@ -547,25 +547,6 @@ namespace AzureFtpServer.Provider {
             ***/
         }
 
-        /// <summary>
-        /// Set blob ContentMD5
-        /// </summary>
-        /// <param name="filePath">blob path</param>
-        /// <param name="md5Value"></param>
-        public void SetBlobMd5(string filePath, string md5Value)
-        {
-            // get the blob
-            // remove the first '/' char
-            string fileBlobPath = filePath.ToAzurePath();
-            CloudBlob blob = _container.GetBlobReference(fileBlobPath);
-
-            blob.FetchAttributes();
-
-            blob.Properties.ContentMD5 = md5Value;
-
-            blob.SetProperties();
-        }
-
         #endregion
 
         #region "Helper methods"
@@ -606,16 +587,6 @@ namespace AzureFtpServer.Provider {
             }
 
             return blockID;
-        }
-
-        private void _GetBlobMd5(string filePath)
-        {
-            string fileBlobPath = filePath.ToAzurePath();
-            CloudBlob blob = _container.GetBlobReference(fileBlobPath);
-
-            blob.FetchAttributes();
-
-            Trace.WriteLine("GetMd5#"+blob.Properties.ContentMD5);
         }
 
         #endregion

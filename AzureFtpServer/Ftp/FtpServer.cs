@@ -327,15 +327,16 @@ namespace AzureFtpServer.Ftp
         public static void LogWrite(string comment)
         {
             if (!m_logEnabled)
+            {
                 return;
+            }
+
             try
             {
                 DateTime utcNow = DateTime.UtcNow;
-                string filename = Path.Combine(FtpServer.m_logPath, string.Format("ftplog_{0}_{1}.log", utcNow.ToString("yyyyMMddHH"), FtpServer.ComputerName));
-                string logdata = string.Format("#{0} {1}\r\n"
-                                            , utcNow.ToString("yyyy-MM-dd HH:mm:ss")
-                                            , comment
-                                            );
+                string filename = Path.Combine(FtpServer.m_logPath,
+                    $"ftplog_{utcNow.ToString("yyyyMMddHH")}_{FtpServer.ComputerName}.log");
+                string logdata = $"#{utcNow.ToString("yyyy-MM-dd HH:mm:ss")} {comment}\r\n";
                 File.AppendAllText(filename, logdata);
             }
             catch // can't fail

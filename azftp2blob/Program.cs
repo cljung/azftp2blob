@@ -20,9 +20,17 @@ namespace azftp2blob
 
         static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
             Program p = new Program();
             p.Go(args);
         }
+
+        private static void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            FtpServer.LogWrite($"UNHANDLED ERROR: {e.ExceptionObject}");
+        }
+
         private int FindArg(string[] args, string argument)
         {
             if (argument.StartsWith("/") || argument.StartsWith("-"))
@@ -73,7 +81,7 @@ namespace azftp2blob
         }
         static void ServerNewConnection(int nId)
         {
-            Console.WriteLine(String.Format("Connection {0} accepted", nId), "Connection");
+            Console.WriteLine($"Connection {nId} accepted", "Connection");
         }
     }
 }

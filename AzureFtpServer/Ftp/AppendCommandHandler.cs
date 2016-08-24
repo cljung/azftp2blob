@@ -47,15 +47,12 @@ namespace AzureFtpServer.FtpCommands
             if (!ConnectionObject.FileSystemObject.AppendFile(sFile, socketData.Socket.GetStream()))
             {
                 FtpServer.LogWrite(this, sMessage, 553, sw.ElapsedMilliseconds);
-                return GetMessage(553, string.Format("{0} error", Command));
+                return GetMessage(553, $"{Command} error");
             }
-
-            // remove the orginal blob ContentMD5
-            ConnectionObject.FileSystemObject.SetFileMd5(sFile, string.Empty);
 
             sw.Stop();
             FtpServer.LogWrite(this, sMessage, 250, sw.ElapsedMilliseconds);
-            return GetMessage(250, string.Format("{0} successful", Command));
+            return GetMessage(250, $"{Command} successful");
         }
     }
 }

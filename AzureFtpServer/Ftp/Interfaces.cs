@@ -40,7 +40,6 @@ namespace AzureFtpServer.Ftp.FileSystem
         bool AppendFile(string sPath, Stream stream);
 
         void Log4Upload(string sPath);// upload notification
-        void SetFileMd5(string sPath, string md5Value);// record md5 for upload files
     }
 
     public interface IFileSystemClassFactory

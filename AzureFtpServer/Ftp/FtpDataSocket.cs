@@ -31,8 +31,10 @@ namespace AzureFtpServer.Ftp
         public void Close()
         {
             if (m_theSocket != null)
+            {
                 SocketHelpers.Close(m_theSocket);
-            
+            }
+
             m_theSocket = null;
         }
 

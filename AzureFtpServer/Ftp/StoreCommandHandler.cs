@@ -69,17 +69,12 @@ namespace AzureFtpServer.FtpCommands
 
             SocketHelpers.Send(ConnectionObject.Socket, GetMessage(150, "Opening connection for data transfer."), ConnectionObject.Encoding);
 
-            string md5Value = string.Empty;
-
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
             // TYPE I, default 
             if (ConnectionObject.DataType == DataType.Image)
             {
-                // md5 hash function
-                MD5 md5Hash = MD5.Create();
-
                 var abData = new byte[m_nBufferSize];
 
                 int nReceived = socketData.Receive(abData);
@@ -95,18 +90,16 @@ namespace AzureFtpServer.FtpCommands
                         FtpServer.LogWrite(this, sMessage, 451, sw.ElapsedMilliseconds);
                         return GetMessage(451, "Write data to Azure error!");
                     }
-                    md5Hash.TransformBlock(abData, 0, nReceived, null, 0);
                     nReceived = socketData.Receive(abData);
-                }
-                md5Hash.TransformFinalBlock(new byte[1], 0, 0);
-                md5Value = BytesToStr(md5Hash.Hash);                
+                }  
             }
             // TYPE A
             // won't compute md5, because read characters from client stream
             else if (ConnectionObject.DataType == DataType.Ascii)
             {
                 int readSize = SocketHelpers.CopyStreamAscii(socketData.Socket.GetStream(), file.BlobStream, m_nBufferSize);
-                FtpServerMessageHandler.SendMessage(ConnectionObject.Id, string.Format("Use ascii type success, read {0} chars!", readSize));
+                FtpServerMessageHandler.SendMessage(ConnectionObject.Id,
+                    $"Use ascii type success, read {readSize} chars!");
             }
             else { // mustn't reach
                 file.Close();
@@ -123,9 +116,6 @@ namespace AzureFtpServer.FtpCommands
 
             file.Close();
             socketData.Close();
-
-            // record md5
-            ConnectionObject.FileSystemObject.SetFileMd5(sFile, md5Value);
 
             FtpServer.LogWrite(this, sMessage, 226, sw.ElapsedMilliseconds);
             return GetMessage(226, string.Format("{0} successful. Time {1} ms", Command, sw.ElapsedMilliseconds));
