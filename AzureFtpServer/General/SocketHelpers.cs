@@ -52,50 +52,6 @@ namespace AzureFtpServer.General
             return Send(socket, abMessage);
         }
 
-        public static void Close(TcpClient socket)
-        {
-            if (socket == null)
-            {
-                return;
-            }
-
-            try
-            {
-                if (socket.GetStream() != null)
-                {
-                    try
-                    {
-                        socket.GetStream().Flush();
-                    }
-                    catch (SocketException)
-                    {
-                    }
-
-                    try
-                    {
-                        socket.GetStream().Close();
-                    }
-                    catch (SocketException)
-                    {
-                    }
-                }
-            }
-            catch (SocketException)
-            {
-            }
-            catch (InvalidOperationException)
-            {
-            }
-
-            try
-            {
-                socket.Close();
-            }
-            catch (SocketException)
-            {
-            }
-        }
-
         public static TcpClient CreateTcpClient(string sAddress, int nPort)
         {
             TcpClient client = null;

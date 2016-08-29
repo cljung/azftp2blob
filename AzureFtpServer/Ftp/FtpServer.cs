@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Configuration;
 using System.Net;
 using System.Linq;
+using AzureFtpServer.Extensions;
 using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.General;
 using AzureFtpServer.FtpCommands;
@@ -61,16 +62,10 @@ namespace AzureFtpServer.Ftp
 
         ~FtpServer()
         {
-            if (m_socketListen != null)
-            {
-                m_socketListen.Stop();
-            }
+            m_socketListen?.Stop();
         }
 
-        public bool Started
-        {
-            get { return m_started; }
-        }
+        public bool Started => m_started;
 
         #endregion
 
@@ -152,7 +147,7 @@ namespace AzureFtpServer.Ftp
                         {
                             Trace.WriteLine("Too many clients, won't handle this connection", "Warnning");
                             SendRejectMessage(socket);
-                            SocketHelpers.Close(socket);
+                            socket.CloseSafelly();
                         }
                         else
                         {
@@ -172,7 +167,7 @@ namespace AzureFtpServer.Ftp
                             {
                                 Trace.TraceError($"ObjectDisposedException initializing client socket:\r\n{ode}");
                                 m_nId--;
-                                SocketHelpers.Close(socket);
+                                socket.CloseSafelly();
                             }
                         }
                     }
@@ -267,41 +262,46 @@ namespace AzureFtpServer.Ftp
 
         private void SendAcceptMessage(TcpClient socket)
         {
-
             SocketHelpers.Send(socket, m_encoding.GetBytes(
                 $"220 Azure Blob Storage FTP Proxy Server - {Environment.MachineName}\r\n"));
         }
 
         private void SendRejectMessage(TcpClient socket)
         {
-            FtpServer.LogWrite(
-                $"{socket.Client.RemoteEndPoint} 421 Too many users now. Count {m_apConnections.Count}, Max {m_maxClients}"
-                );
+            lock (m_apConnections)
+            {
+                FtpServer.LogWrite(
+                    $"{socket.Client.RemoteEndPoint} 421 Too many users now. Count {m_apConnections.Count}, Max {m_maxClients}"
+                    );
 
-            string clientsDump = string.Join("\r\n", m_apConnections.Select(c => $"\t{c.RemoteEndPoint}"));
-            FtpServer.LogWrite($"connected clients:\r\n{clientsDump}");
+                string clientsDump = string.Join("\r\n", m_apConnections.Select(c => $"\t{c.RemoteEndPoint}"));
+                FtpServer.LogWrite($"connected clients:\r\n{clientsDump}");
 
-            SocketHelpers.Send(socket, m_encoding.GetBytes("421 Too many users now\r\n"));
+                SocketHelpers.Send(socket, m_encoding.GetBytes("421 Too many users now\r\n"));
+            }
         }
 
         private void InitialiseSocketHandler(TcpClient socket)
         {
-            var handler = new FtpSocketHandler(m_fileSystemClassFactory, m_nId);
-            handler.Closed += handler_Closed;
+            lock (m_apConnections)
+            {
+                var handler = new FtpSocketHandler(m_fileSystemClassFactory, m_nId);
+                handler.Closed += handler_Closed;
 
-            // get encoding for the socket connection
+                // get encoding for the socket connection
 
-            handler.Start(socket, m_encoding);
-            
-            m_apConnections.Add(handler);
+                handler.Start(socket, m_encoding);
 
-            FtpServer.LogWrite(
-                $"Client accepted: {socket.Client.RemoteEndPoint} current count={m_apConnections.Count}");
-            Trace.WriteLine(
-                $"Handler created for client {handler.RemoteEndPoint}. Current Count {m_apConnections.Count}",
-                "Information");
+                m_apConnections.Add(handler);
 
-            NewConnection?.Invoke(m_nId);
+                FtpServer.LogWrite(
+                    $"Client accepted: {socket.Client.RemoteEndPoint} current count={m_apConnections.Count}");
+                Trace.WriteLine(
+                    $"Handler created for client {handler.RemoteEndPoint}. Current Count {m_apConnections.Count}",
+                    "Information");
+
+                NewConnection?.Invoke(m_nId);
+            }
         }
 
         #endregion
@@ -310,18 +310,23 @@ namespace AzureFtpServer.Ftp
 
         private void handler_Closed(FtpSocketHandler handler)
         {
-            m_apConnections.Remove(handler);
+            lock (m_apConnections)
+            {
+                m_apConnections.Remove(handler);
 
-            Trace.WriteLine(
-                $"Handler closed {handler.Socket.Client.RemoteEndPoint}. Current Count {m_apConnections.Count}",
-                "Information");
+                FtpServer.LogWrite(
+                    $"Client closed: {handler.RemoteEndPoint} current count={m_apConnections.Count}");
+                Trace.WriteLine(
+                    $"Handler closed {handler.RemoteEndPoint}. Current Count {m_apConnections.Count}",
+                    "Information");
 
-            ConnectionClosed?.Invoke(handler.Id);
+                ConnectionClosed?.Invoke(handler.Id);
+            }
         }
 
         public void TraceMessage(int nId, string sMessage)
         {
-            Trace.WriteLine(string.Format("{0}: {1}", nId, sMessage), "FtpServerMessage");
+            Trace.WriteLine($"{nId}: {sMessage}", "FtpServerMessage");
         }
 
         public static void LogWrite(string comment)

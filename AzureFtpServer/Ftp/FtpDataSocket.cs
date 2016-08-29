@@ -1,5 +1,6 @@
 using System.Net.Sockets;
 using System.Text;
+using AzureFtpServer.Extensions;
 using AzureFtpServer.General;
 
 namespace AzureFtpServer.Ftp
@@ -30,11 +31,7 @@ namespace AzureFtpServer.Ftp
 
         public void Close()
         {
-            if (m_theSocket != null)
-            {
-                SocketHelpers.Close(m_theSocket);
-            }
-
+            m_theSocket?.CloseSafelly();
             m_theSocket = null;
         }
 

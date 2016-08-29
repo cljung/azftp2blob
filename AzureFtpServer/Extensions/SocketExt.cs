@@ -20,5 +20,49 @@ namespace AzureFtpServer.Extensions
                 return $"UNKNOWN [{e.Message}]";
             }
         }
+
+        public static void CloseSafelly(this TcpClient socket)
+        {
+            if (socket == null)
+            {
+                return;
+            }
+
+            try
+            {
+                if (socket.GetStream() != null)
+                {
+                    try
+                    {
+                        socket.GetStream().Flush();
+                    }
+                    catch (SocketException)
+                    {
+                    }
+
+                    try
+                    {
+                        socket.GetStream().Close();
+                    }
+                    catch (SocketException)
+                    {
+                    }
+                }
+            }
+            catch (SocketException)
+            {
+            }
+            catch (InvalidOperationException)
+            {
+            }
+
+            try
+            {
+                socket.Close();
+            }
+            catch (SocketException)
+            {
+            }
+        }
     }
 }

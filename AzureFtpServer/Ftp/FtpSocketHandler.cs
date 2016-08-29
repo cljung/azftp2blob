@@ -58,6 +58,7 @@ namespace AzureFtpServer.Ftp
             m_theSocket = socket;
 
             m_maxIdleSeconds = StorageProviderConfiguration.MaxIdleSeconds;
+            RemoteEndPoint = m_theSocket.GetRemoteAddrSafelly();
 
             lock (lastActiveLock)
             {
@@ -77,12 +78,12 @@ namespace AzureFtpServer.Ftp
 
         public void Stop()
         {
-            SocketHelpers.Close(m_theSocket);
+            m_theSocket.CloseSafelly();
             m_theThread.Join();
             m_theMonitorThread.Join();
         }
 
-        internal string RemoteEndPoint => m_theSocket.GetRemoteAddrSafelly();
+        internal string RemoteEndPoint { get; private set; }
 
         private void RunSafelly()
         {
@@ -108,7 +109,7 @@ namespace AzureFtpServer.Ftp
             }
             catch (Exception e)
             {
-                FtpServer.LogWrite($"socket handler thread for {RemoteEndPoint} failed: {e}");
+                FtpServer.LogWrite($"monitor thread for {RemoteEndPoint} failed: {e}");
             }
         }
 
@@ -144,7 +145,7 @@ namespace AzureFtpServer.Ftp
             finally
             {
                 FtpServerMessageHandler.SendMessage(m_nId, "Connection closed");
-                SocketHelpers.Close(m_theSocket);
+                m_theSocket.CloseSafelly();
             }
         }
 
