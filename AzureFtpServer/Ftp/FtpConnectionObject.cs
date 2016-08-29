@@ -133,13 +133,15 @@ namespace AzureFtpServer.Ftp
             m_theCommandHashTable.Add(handler.Command, handler);
         }
 
-        public void Process(Byte[] abData)
+        public void Process(byte[] abData)
         {
             string sMessage = this.Encoding.GetString(abData);
             // 2015-11-26 cljung : BUG .IndexOf returns -1 if search item isn't found. Substring throws exception with -1
             int pos = sMessage.IndexOf('\r');
             if (pos >= 0)
+            {
                 sMessage = sMessage.Substring(0, pos);
+            }
 
             FtpServerMessageHandler.SendMessage(Id, sMessage);
 
@@ -179,8 +181,8 @@ namespace AzureFtpServer.Ftp
 
             if (handler == null)
             {
-                FtpServerMessageHandler.SendMessage(Id, string.Format("\"{0}\" : Unknown command", sCommand));
-                FtpServer.LogWrite( string.Format("{0} Unknown/unsupported command: {1}", Socket.Client.RemoteEndPoint.ToString(), sCommand));
+                FtpServerMessageHandler.SendMessage(Id, $"\"{sCommand}\" : Unknown command");
+                FtpServer.LogWrite($"{Socket.Client.RemoteEndPoint.ToString()} Unknown/unsupported command: {sCommand}");
                 SocketHelpers.Send(Socket, "550 Unknown command\r\n", this.Encoding);
             }
             else

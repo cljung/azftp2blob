@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Diagnostics;
+using AzureFtpServer.Extensions;
 using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.General;
 using AzureFtpServer.Provider;
@@ -58,18 +59,21 @@ namespace AzureFtpServer.Ftp
 
             m_maxIdleSeconds = StorageProviderConfiguration.MaxIdleSeconds;
 
-            m_lastActiveTime = DateTime.Now;
+            lock (lastActiveLock)
+            {
+                m_lastActiveTime = DateTime.Now;
+            }
 
             m_theCommands = new FtpConnectionObject(m_fileSystemClassFactory, m_nId, socket);
             m_theCommands.Encoding = encoding;
-            m_theThread = new Thread(ThreadRun);
+
+            m_theThread = new Thread(RunSafelly);
             m_theThread.Start();
-            m_theMonitorThread = new Thread(ThreadMonitor);
+
+            m_theMonitorThread = new Thread(MonitorSafelly);
             m_theMonitorThread.Start();
         }
-        public TcpClient Socket {
-            get { return m_theSocket; }
-        }
+        public TcpClient Socket => m_theSocket;
 
         public void Stop()
         {
@@ -78,42 +82,70 @@ namespace AzureFtpServer.Ftp
             m_theMonitorThread.Join();
         }
 
+        internal string RemoteEndPoint => m_theSocket.GetRemoteAddrSafelly();
+
+        private void RunSafelly()
+        {
+            try
+            {
+                ThreadRun();
+            }
+            catch (Exception e)
+            {
+                FtpServer.LogWrite($"socket handler thread for {RemoteEndPoint} failed: {e}");
+            }
+            finally
+            {
+                Closed?.Invoke(this);
+            }
+        }
+
+        private void MonitorSafelly()
+        {
+            try
+            {
+                ThreadMonitor();
+            }
+            catch (Exception e)
+            {
+                FtpServer.LogWrite($"socket handler thread for {RemoteEndPoint} failed: {e}");
+            }
+        }
+
+        private readonly object lastActiveLock = new object();
+
         private void ThreadRun()
         {
-            var abData = new Byte[m_nBufferSize];
+            var abData = new byte[m_nBufferSize];
 
             try
             {
-                int nReceived = m_theSocket.GetStream().Read(abData, 0, m_nBufferSize);
-
-                while (nReceived > 0)
+                int nReceived = 0;
+                do
                 {
-                    m_theCommands.Process(abData);
-
-                    // the Read method will block
                     nReceived = m_theSocket.GetStream().Read(abData, 0, m_nBufferSize);
+                    lock (lastActiveLock)
+                    {
+                        m_lastActiveTime = DateTime.Now;
+                    }
 
-                    m_lastActiveTime = DateTime.Now;
-                }
+                    m_theCommands.Process(abData);
+                } while (nReceived > 0);
             }
             catch (SocketException)
             {
             }
-            catch(InvalidOperationException)
+            catch (InvalidOperationException)
             {
             }
             catch (IOException)
             {
             }
-
-            FtpServerMessageHandler.SendMessage(m_nId, "Connection closed");
-
-            if (Closed != null)
+            finally
             {
-                Closed(this);
+                FtpServerMessageHandler.SendMessage(m_nId, "Connection closed");
+                SocketHelpers.Close(m_theSocket);
             }
-
-            m_theSocket.Close();
         }
 
         private void ThreadMonitor()
@@ -121,18 +153,20 @@ namespace AzureFtpServer.Ftp
             while (m_theThread.IsAlive)
             {
                 DateTime currentTime = DateTime.Now;
-                TimeSpan timeSpan = currentTime - m_lastActiveTime;
+                TimeSpan timeSpan;
+                lock (lastActiveLock)
+                {
+                    timeSpan = currentTime - m_lastActiveTime;
+                }
+
                 // has been idle for a long time
                 if ((timeSpan.TotalSeconds > m_maxIdleSeconds) && !m_theCommands.DataSocketOpen) 
                 {
-                    SocketHelpers.Send(m_theSocket, string.Format("426 No operations for {0}+ seconds. Bye!", m_maxIdleSeconds), m_theCommands.Encoding);
+                    SocketHelpers.Send(m_theSocket, 
+                        $"426 No operations for {m_maxIdleSeconds}+ seconds. Bye!", m_theCommands.Encoding);
                     FtpServerMessageHandler.SendMessage(m_nId, "Connection closed for too long idle time.");
-                    if (Closed != null)
-                    {
-                        Closed(this);
-                    }
-                    m_theSocket.Close();
-                    this.Stop();
+                    Stop();
+
                     return;
                 }
                 Thread.Sleep(1000 * m_maxIdleSeconds);
