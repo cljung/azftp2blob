@@ -22,10 +22,10 @@ namespace AzureFtpServer.FtpCommands
         {
             sMessage = sMessage.Trim();
             if (sMessage == "")
-                return GetMessage(501, string.Format("{0} needs a parameter", Command));
+                return GetMessage(501, $"{Command} needs a parameter");
 
             string fileToDelete = GetPath(sMessage);
-            Trace.TraceInformation(string.Format("DELE {0} - BEGIN", fileToDelete));
+            Trace.TraceInformation($"DELE {fileToDelete} - BEGIN");
             Stopwatch sw = new Stopwatch();
             sw.Start();
             
@@ -38,26 +38,26 @@ namespace AzureFtpServer.FtpCommands
                 else
                 {
                     FtpServer.LogWrite(this, sMessage, 550, sw.ElapsedMilliseconds);
-                    return GetMessage(550, string.Format("File \"{0}\" does not exist.", fileToDelete));
+                    return GetMessage(550, $"File \"{fileToDelete}\" does not exist.");
                 }
             }
 
             if (!ConnectionObject.FileSystemObject.FileExists(fileToDelete))
             {
                 FtpServer.LogWrite(this, sMessage, 550, sw.ElapsedMilliseconds);
-                return GetMessage(550, string.Format("File \"{0}\" does not exist.", fileToDelete));
+                return GetMessage(550, $"File \"{fileToDelete}\" does not exist.");
             }
 
             if (!ConnectionObject.FileSystemObject.DeleteFile(fileToDelete))
             {
                 FtpServer.LogWrite(this, sMessage, 550, sw.ElapsedMilliseconds);
-                return GetMessage(550, string.Format("Delete file \"{0}\" failed.", fileToDelete));
+                return GetMessage(550, $"Delete file \"{fileToDelete}\" failed.");
             }
             sw.Stop();
-            Trace.TraceInformation(string.Format("DELE {0} - END, Time {1} ms", fileToDelete, sw.ElapsedMilliseconds));
+            Trace.TraceInformation($"DELE {fileToDelete} - END, Time {sw.ElapsedMilliseconds} ms");
 
             FtpServer.LogWrite(this, sMessage, 250, sw.ElapsedMilliseconds);
-            return GetMessage(250, string.Format("{0} successful. Time {1} ms", Command, sw.ElapsedMilliseconds));
+            return GetMessage(250, $"{Command} successful. Time {sw.ElapsedMilliseconds} ms");
         }
     }
 }

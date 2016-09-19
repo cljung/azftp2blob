@@ -99,6 +99,8 @@
     <Compile Include="Azure\AzureFileSystemFactory.cs" />
     <Compile Include="Azure\AzureFileSystem.cs" />
     <Compile Include="Azure\ExtensionMethods.cs" />
+    <Compile Include="Azure\ReadOnlyFile.cs" />
+    <Compile Include="Azure\ReadOnlyFileSystem.cs" />
     <Compile Include="Extensions\SocketExt.cs" />
     <Compile Include="Ftp\AccountManager.cs" />
     <Compile Include="Ftp\AlloCommandHandler.cs" />

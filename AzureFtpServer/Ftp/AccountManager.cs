@@ -9,11 +9,16 @@ namespace AzureFtpServer.Ftp
 {
     class FtpAccount
     {
-        public string userid { get; set; }
-        public string password { get; set; }
-        public string rootFolder { get; set; }
-        public bool readAccess { get; set; }
-        public bool writeAccess { get; set; }
+        public string Userid { get; set; }
+        public string Password { get; set; }
+        public string RootFolder { get; set; }
+        public bool ReadAccess { get; set; }
+        public bool WriteAccess { get; set; }
+
+        public override string ToString()
+        {
+            return Userid;
+        }
     }
     /// <summary>
     /// AccountManager Class
@@ -24,7 +29,7 @@ namespace AzureFtpServer.Ftp
         #region Member Variables
 
         private const char separator = ';';
-        private Dictionary<string, FtpAccount> _accounts;
+        private readonly Dictionary<string, FtpAccount> _accounts;
         private int _usernum;
         
         #endregion
@@ -99,7 +104,9 @@ namespace AzureFtpServer.Ftp
 
                     // check whether the username already exists
                     if (_accounts.ContainsKey(username))
+                    {
                         continue;
+                    }
 
                     // get the password substr
                     string password = parts[1];
@@ -119,12 +126,22 @@ namespace AzureFtpServer.Ftp
                         continue;
                     }
 
-                    FtpAccount account = new FtpAccount();
-                    account.userid = username;
-                    account.password = password;
-                    account.rootFolder = rootFolder;
-                    account.readAccess = true;
-                    account.writeAccess = true;
+                    FtpAccount account = new FtpAccount
+                    {
+                        Userid = username,
+                        Password = password,
+                        RootFolder = rootFolder,
+                        ReadAccess = true,
+                        WriteAccess = true
+                    };
+
+                    if (parts.Length > 3)
+                    {
+                        string rights = parts[3].ToLower();
+                        account.WriteAccess = rights.IndexOf('w') != -1;
+                        account.ReadAccess = account.WriteAccess || rights.IndexOf('r') != -1;
+                    }
+
                     _accounts.Add(username, account);
                     _usernum++;
                 }
@@ -132,7 +149,7 @@ namespace AzureFtpServer.Ftp
             sr.Close();
 
 
-            Trace.WriteLine(string.Format("Load {0} accounts.", _usernum), "Information");
+            Trace.WriteLine($"Load {_usernum} accounts.", "Information");
             
             return _usernum;
         }
@@ -142,19 +159,23 @@ namespace AzureFtpServer.Ftp
         /// </summary>
         /// <param name="username"></param>
         /// <param name="password"></param>
+        /// <param name="account"></param>
         /// <returns></returns>
-        public bool CheckAccount(string username, string password, out string rootFolder)
+        public bool CheckAccount(string username, string password, out FtpAccount account)
         {
             username = username.ToLowerInvariant();
-            rootFolder = "";
-            if (!_accounts.ContainsKey(username))
-                return false;
-            if (_accounts[username].password == password)
+            if (!_accounts.TryGetValue(username, out account))
             {
-                rootFolder = _accounts[username].rootFolder;
+                return false;
+            }
+
+            if (account.Password == password)
+            {
                 return true;
             }
-            else return false;
+
+            account = null;
+            return false;
 
         }
 
