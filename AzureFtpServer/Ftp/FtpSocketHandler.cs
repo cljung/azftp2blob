@@ -133,15 +133,6 @@ namespace AzureFtpServer.Ftp
                     m_theCommands.Process(abData);
                 } while (nReceived > 0);
             }
-            catch (SocketException)
-            {
-            }
-            catch (InvalidOperationException)
-            {
-            }
-            catch (IOException)
-            {
-            }
             finally
             {
                 FtpServerMessageHandler.SendMessage(m_nId, "Connection closed");

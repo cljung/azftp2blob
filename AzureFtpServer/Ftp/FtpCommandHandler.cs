@@ -55,7 +55,7 @@ namespace AzureFtpServer.FtpCommands
 
         protected string GetMessage(int nReturnCode, string sMessage)
         {
-            return string.Format("{0} {1}\r\n", nReturnCode, sMessage);
+            return $"{nReturnCode} {sMessage}\r\n";
         }
 
         /// <summary>
