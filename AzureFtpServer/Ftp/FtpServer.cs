@@ -314,7 +314,7 @@ namespace AzureFtpServer.Ftp
             {
                 m_apConnections.Remove(handler);
 
-                FtpServer.LogWrite(
+                LogWrite(
                     $"Client closed: {handler.RemoteEndPoint} current count={m_apConnections.Count}");
                 Trace.WriteLine(
                     $"Handler closed {handler.RemoteEndPoint}. Current Count {m_apConnections.Count}",
@@ -341,7 +341,7 @@ namespace AzureFtpServer.Ftp
                 DateTime utcNow = DateTime.UtcNow;
                 string filename = Path.Combine(FtpServer.m_logPath,
                     $"ftplog_{utcNow.ToString("yyyyMMddHH")}_{FtpServer.ComputerName}.log");
-                string logdata = $"#{utcNow.ToString("yyyy-MM-dd HH:mm:ss")} {comment}\r\n";
+                string logdata = $"{utcNow.ToString("yyyy-MM-dd HH:mm:ss")} {comment}\r\n";
                 File.AppendAllText(filename, logdata);
             }
             catch // can't fail

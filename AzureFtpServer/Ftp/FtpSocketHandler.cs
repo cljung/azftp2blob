@@ -145,15 +145,19 @@ namespace AzureFtpServer.Ftp
             while (m_theThread.IsAlive)
             {
                 DateTime currentTime = DateTime.Now;
+                DateTime lastActivityCopy;
                 TimeSpan timeSpan;
                 lock (lastActiveLock)
                 {
+                    lastActivityCopy = m_lastActiveTime;
                     timeSpan = currentTime - m_lastActiveTime;
                 }
 
                 // has been idle for a long time
                 if ((timeSpan.TotalSeconds > m_maxIdleSeconds) && !m_theCommands.DataSocketOpen) 
                 {
+                    FtpServer.LogWrite($"closing connection {RemoteEndPoint} because of idle timeout; " +
+                                       $"last activity time: {lastActivityCopy}");
                     SocketHelpers.Send(m_theSocket, 
                         $"426 No operations for {m_maxIdleSeconds}+ seconds. Bye!", m_theCommands.Encoding);
                     FtpServerMessageHandler.SendMessage(m_nId, "Connection closed for too long idle time.");
