@@ -39,7 +39,6 @@ namespace AzureFtpServer.FtpCommands
 
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            string pasvListenAddress = GetPassiveAddressInfo();
 
             //return GetMessage(227, string.Format("Entering Passive Mode ({0})", pasvListenAddress));
 
@@ -61,6 +60,8 @@ namespace AzureFtpServer.FtpCommands
                 FtpServer.LogWrite("unable to select passive ports, looks like too many clients are connected at once");
                 return GetMessage(550, "Too many concurrent PASV requests");
             }
+
+            string pasvListenAddress = GetPassiveAddressInfo(selectedPort);
 
             //System.Net.IPAddress ipaddr = SocketHelpers.GetLocalAddress();
             //System.Net.IPEndPoint ipEndPoint = new System.Net.IPEndPoint(ipaddr.Address, port);
@@ -97,7 +98,7 @@ namespace AzureFtpServer.FtpCommands
             return "";
         }
 
-        private string GetPassiveAddressInfo()
+        private string GetPassiveAddressInfo(int port)
         {
             // get routable ipv4 address of load balanced service
             IPAddress ipAddress = SocketHelpers.GetLocalAddress(StorageProviderConfiguration.FtpServerHostPublic);
@@ -110,9 +111,9 @@ namespace AzureFtpServer.FtpCommands
 
             // append the port
             retIpPort += ',';
-            retIpPort += (m_nPort / 256).ToString();
+            retIpPort += (port / 256).ToString();
             retIpPort += ',';
-            retIpPort += (m_nPort % 256).ToString();
+            retIpPort += (port % 256).ToString();
 
             return retIpPort;
         }
