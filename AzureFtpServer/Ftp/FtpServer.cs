@@ -145,7 +145,7 @@ namespace AzureFtpServer.Ftp
                         }
                         else if (m_apConnections.Count >= m_maxClients)
                         {
-                            Trace.WriteLine("Too many clients, won't handle this connection", "Warnning");
+                            Trace.WriteLine("Too many clients, won't handle this connection", "Warning");
                             SendRejectMessage(socket);
                             socket.CloseSafelly();
                         }
@@ -329,6 +329,9 @@ namespace AzureFtpServer.Ftp
             Trace.WriteLine($"{nId}: {sMessage}", "FtpServerMessage");
         }
 
+        private static string FileName => $"ftplog_{DateTime.UtcNow.ToString("yyyyMMdd")}_{FtpServer.ComputerName}.log";
+        private static readonly object LogFileLock = new object();
+
         public static void LogWrite(string comment)
         {
             if (!m_logEnabled)
@@ -339,10 +342,12 @@ namespace AzureFtpServer.Ftp
             try
             {
                 DateTime utcNow = DateTime.UtcNow;
-                string filename = Path.Combine(FtpServer.m_logPath,
-                    $"ftplog_{utcNow.ToString("yyyyMMddHH")}_{FtpServer.ComputerName}.log");
+                string filename = Path.Combine(FtpServer.m_logPath, FileName);
                 string logdata = $"{utcNow.ToString("yyyy-MM-dd HH:mm:ss")} {comment}\r\n";
-                File.AppendAllText(filename, logdata);
+                lock (LogFileLock)
+                {
+                    File.AppendAllText(filename, logdata);
+                }
             }
             catch // can't fail
             {
@@ -356,7 +361,7 @@ namespace AzureFtpServer.Ftp
             try
             {
                 DateTime utcNow = DateTime.UtcNow;
-                string filename = Path.Combine(FtpServer.m_logPath, string.Format("ftplog_{0}_{1}.log", utcNow.ToString("yyyyMMddHH"), FtpServer.ComputerName));
+                string filename = Path.Combine(FtpServer.m_logPath, FileName);
                 // 2015-11-20 23:13:57 213.67.145.199 CLJUNGFTP01\hhh 10.76.190.155 21 RETR 151118+HH-RIG+3-0.avi 226 0 0 5937c9cb-07d9-4fa8-a04d-3bff7fd024e9 /herr/elitserien/1-grundserien/151118+HH-RIG+3-0.avi
 
                 string logdata = string.Format("{0} {1} {2} {3} {4} {5} {6} {7}\r\n"
@@ -369,7 +374,10 @@ namespace AzureFtpServer.Ftp
                                             , elapsedMs
                                             , sMessage
                                             );
-                File.AppendAllText(filename, logdata);
+                lock (LogFileLock)
+                {
+                    File.AppendAllText(filename, logdata);
+                }
             }
             catch // can't fail
             {
