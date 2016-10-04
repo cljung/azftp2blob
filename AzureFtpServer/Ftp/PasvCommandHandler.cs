@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Configuration;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using AzureFtpServer.Ftp;
 using AzureFtpServer.General;
 using AzureFtpServer.Provider;
@@ -16,7 +17,8 @@ namespace AzureFtpServer.FtpCommands
     /// </summary>
     internal class PasvCommandHandler : FtpCommandHandler
     {
-        private int m_nPort;
+        private readonly int m_nPort;
+        private readonly int maxAcceptWaitTimeSeconds;
 
         // This command maybe won't work if the ftp server is deployed locally <= firewall
         public PasvCommandHandler(FtpConnectionObject connectionObject)
@@ -24,6 +26,15 @@ namespace AzureFtpServer.FtpCommands
         {
             // set passive listen port
             m_nPort = int.Parse(ConfigurationManager.AppSettings["FTPPASV"]);
+            int maxWaitSeconds;
+            if (!int.TryParse(ConfigurationManager.AppSettings["MaxIdleSeconds"], out maxWaitSeconds))
+            {
+                maxAcceptWaitTimeSeconds = 60;
+            }
+            else
+            {
+                maxAcceptWaitTimeSeconds = Math.Max(5, maxWaitSeconds/2);
+            }
         }
 
         /// <summary>
@@ -82,7 +93,15 @@ namespace AzureFtpServer.FtpCommands
 
                 listener.Start();
 
-                ConnectionObject.PassiveSocket = listener.AcceptTcpClient();
+                Task<TcpClient> acceptTask = listener.AcceptTcpClientAsync();
+                int completed = Task.WaitAny(new[] {acceptTask}, TimeSpan.FromSeconds(maxAcceptWaitTimeSeconds));
+                if (completed != 0)
+                {
+                    FtpServer.LogWrite("timeout while waiting on PASV connection");
+                    return GetMessage(550, "PASV listener timeout");
+                }
+
+                ConnectionObject.PassiveSocket = acceptTask.Result;
             }
             finally
             {

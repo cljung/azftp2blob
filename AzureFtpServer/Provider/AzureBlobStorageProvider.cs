@@ -9,6 +9,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using AzureFtpServer.Ftp.General;
 using AzureFtpServer.Azure;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
 
 
 namespace AzureFtpServer.Provider {
@@ -113,15 +114,18 @@ namespace AzureFtpServer.Provider {
 
         #region Storage operations
 
+        private static BlobRequestOptions ReqOptions { get; } = new BlobRequestOptions()
+        {
+            MaximumExecutionTime = TimeSpan.FromMinutes(10),
+            StoreBlobContentMD5 = true,
+            ServerTimeout = TimeSpan.FromSeconds(30),
+            RetryPolicy = new ExponentialRetry(TimeSpan.FromSeconds(2), 3)
+        };
+
         public CloudBlobStream GetWriteBlobStream(string path)
         {
             CloudBlockBlob blob = GetCloudBlob(path);
-
-            if (blob == null)
-                return null;
-
-            CloudBlobStream stream = blob.OpenWrite();
-            return stream;
+            return blob?.OpenWrite(options: ReqOptions);
         }
 
         public Stream GetReadBlobStream(string path)
@@ -131,7 +135,7 @@ namespace AzureFtpServer.Provider {
             if (blob == null)
                 return null;
             
-            Stream stream = blob.OpenRead();
+            Stream stream = blob.OpenRead(options: ReqOptions);
             stream.Position = 0;
             
             return stream;
@@ -187,7 +191,7 @@ namespace AzureFtpServer.Provider {
             if (path == "/")
                 return false;
 
-            IEnumerable<IListBlobItem> allFiles = _blobClient.ListBlobs( GetFullPath(path), true );
+            IEnumerable<IListBlobItem> allFiles = _blobClient.ListBlobs( GetFullPath(path), true, options: ReqOptions);
             foreach (var file in allFiles) 
             {
                 string uri = file.Uri.ToString();
@@ -299,7 +303,7 @@ namespace AzureFtpServer.Provider {
             // Get the full path of directory
             string prefix = GetFullPath(dirPath);
 
-            IEnumerable<CloudBlobDirectory> results = _blobClient.ListBlobs(prefix).OfType<CloudBlobDirectory>();
+            IEnumerable<CloudBlobDirectory> results = _blobClient.ListBlobs(prefix, options: ReqOptions).OfType<CloudBlobDirectory>();
 
             return results;
         }
@@ -314,7 +318,7 @@ namespace AzureFtpServer.Provider {
             // Get the full path of directory
             string prefix = GetFullPath(dirPath);
 
-            IEnumerable<CloudBlockBlob> results = _blobClient.ListBlobs(prefix).OfType<CloudBlockBlob>();
+            IEnumerable<CloudBlockBlob> results = _blobClient.ListBlobs(prefix, options: ReqOptions).OfType<CloudBlockBlob>();
             
             return results;
         }
@@ -467,7 +471,7 @@ namespace AzureFtpServer.Provider {
 
             try
             {
-                foreach (var block in blob.DownloadBlockList())
+                foreach (var block in blob.DownloadBlockList(options: ReqOptions))
                 {
                     blockList.Add(block.Name);
                 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using AzureFtpServer.Ftp;
 using AzureFtpServer.Ftp.FileSystem;
 
 
@@ -7,7 +8,15 @@ namespace AzureFtpServer.Azure
 {
     public sealed class AzureFile : IFile
     {
+        private readonly string name;
+
         #region Implementation of IFile
+
+        public AzureFile(string name)
+        {
+            this.name = name;
+        }
+
 
         public Stream BlobStream { get; set; }
 
@@ -22,13 +31,15 @@ namespace AzureFtpServer.Azure
             {
                 return BlobStream.Read(abData, 0, nDataSize);
             }
-            catch (IOException)
+            catch (IOException io)
             {
+                FtpServer.LogWrite($"IO failure when reading {name}: {io}");
                 return 0;
             }
             // other exceptions
-            catch (Exception)
+            catch (Exception e)
             {
+                FtpServer.LogWrite($"error while reading file {name}: {e}");
                 // need logging, fix me
                 return 0;
             }
@@ -46,8 +57,14 @@ namespace AzureFtpServer.Azure
                 BlobStream.Write(abData, 0, nDataSize);
                 return nDataSize;
             }
-            catch (IOException)
+            catch (IOException io)
             {
+                FtpServer.LogWrite($"IO failure when writing {name}: {io}");
+                return 0;
+            }
+            catch (Exception e)
+            {
+                FtpServer.LogWrite($"failed to write to {name}: {e}");
                 return 0;
             }
         }

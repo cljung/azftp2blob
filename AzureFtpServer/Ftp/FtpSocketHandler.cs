@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Threading;
 using System.Diagnostics;
+using System.Threading.Tasks;
 using AzureFtpServer.Extensions;
 using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.General;
@@ -62,7 +63,7 @@ namespace AzureFtpServer.Ftp
 
             lock (lastActiveLock)
             {
-                m_lastActiveTime = DateTime.Now;
+                m_lastActiveTime = DateTime.UtcNow;
             }
 
             m_theCommands = new FtpConnectionObject(m_fileSystemClassFactory, m_nId, socket);
@@ -75,12 +76,14 @@ namespace AzureFtpServer.Ftp
             m_theMonitorThread.Start();
         }
         public TcpClient Socket => m_theSocket;
+        private readonly CancellationTokenSource cancelationSource = new CancellationTokenSource();
 
         public void Stop()
         {
-            m_theSocket.CloseSafelly();
+            cancelationSource.Cancel();
+
             m_theThread.Join();
-            m_theMonitorThread.Join();
+            m_theSocket.CloseSafelly();
         }
 
         internal string RemoteEndPoint { get; private set; }
@@ -124,14 +127,20 @@ namespace AzureFtpServer.Ftp
                 int nReceived = 0;
                 do
                 {
-                    nReceived = m_theSocket.GetStream().Read(abData, 0, m_nBufferSize);
+                    var t = m_theSocket.GetStream().ReadAsync(abData, 0, m_nBufferSize);
+                    t.Wait(cancelationSource.Token);
+
+                    nReceived = t.Result;
                     lock (lastActiveLock)
                     {
-                        m_lastActiveTime = DateTime.Now;
+                        m_lastActiveTime = DateTime.UtcNow;
                     }
 
                     m_theCommands.Process(abData);
                 } while (nReceived > 0);
+            }
+            catch (OperationCanceledException)
+            {
             }
             finally
             {
@@ -144,7 +153,7 @@ namespace AzureFtpServer.Ftp
         {
             while (m_theThread.IsAlive)
             {
-                DateTime currentTime = DateTime.Now;
+                DateTime currentTime = DateTime.UtcNow;
                 DateTime lastActivityCopy;
                 TimeSpan timeSpan;
                 lock (lastActiveLock)

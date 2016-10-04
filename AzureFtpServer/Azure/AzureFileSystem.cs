@@ -25,7 +25,7 @@ namespace AzureFtpServer.Azure
 
         public IFile OpenFile(string sPath, bool fWrite)
         {
-            var f = new AzureFile();
+            var f = new AzureFile(sPath);
             if (fWrite == true)
             {
                 f.BlobStream = _provider.GetWriteBlobStream(sPath);
