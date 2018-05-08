@@ -115,67 +115,66 @@ namespace AzureFtpServer.Ftp
             FtpServer.m_ftpIpAddr = ipaddr.ToString();
             m_socketListen = SocketHelpers.CreateTcpListener(ipEndPoint);
 
-            if (m_socketListen != null)
+            if (m_socketListen == null)
             {
-                string msg = $"FTP Server started.Listening to: {ipEndPoint}";
-                FtpServer.LogWrite(msg);
-                Trace.TraceInformation(msg);
+                FtpServerMessageHandler.SendMessage(0, "Error in starting FTP server");
+                return;
+            }
 
-                m_socketListen.Start();
+            string msg = $"FTP Server started.Listening to: {ipEndPoint}";
+            FtpServer.LogWrite(msg);
+            Trace.TraceInformation(msg);
 
-                bool fContinue = true;
+            m_socketListen.Start();
+            bool fContinue = true;
 
-                while (fContinue)
+            while (fContinue)
+            {
+                TcpClient socket = null;
+
+                try
                 {
-                    TcpClient socket = null;
-
-                    try
-                    {
-                        socket = m_socketListen.AcceptTcpClient();
-                    }
-                    catch (SocketException)
+                    socket = m_socketListen.AcceptTcpClient();
+                }
+                catch (SocketException)
+                {
+                    fContinue = false;
+                }
+                finally
+                {
+                    if (socket == null)
                     {
                         fContinue = false;
                     }
-                    finally
+                    else if (m_apConnections.Count >= m_maxClients)
                     {
-                        if (socket == null)
+                        Trace.WriteLine("Too many clients, won't handle this connection", "Warning");
+                        SendRejectMessage(socket);
+                        socket.CloseSafelly();
+                    }
+                    else
+                    {
+                        socket.NoDelay = false;
+
+                        m_nId++;
+
+                        FtpServerMessageHandler.SendMessage(m_nId, "New connection");
+
+                        SendAcceptMessage(socket);
+                        // 2015-11-25 cljung : under stress testing, this happens. Don't know why yet, but let's keep it from crashing
+                        try
                         {
-                            fContinue = false;
+                            InitialiseSocketHandler(socket);
                         }
-                        else if (m_apConnections.Count >= m_maxClients)
+                        catch (System.ObjectDisposedException ode)
                         {
-                            Trace.WriteLine("Too many clients, won't handle this connection", "Warning");
-                            SendRejectMessage(socket);
+                            FtpServer.LogWrite($"ObjectDisposedException initializing client socket:\r\n{ode}");
+                            Trace.TraceError($"ObjectDisposedException initializing client socket:\r\n{ode}");
+                            m_nId--;
                             socket.CloseSafelly();
-                        }
-                        else
-                        {
-                            socket.NoDelay = false;
-
-                            m_nId++;
-
-                            FtpServerMessageHandler.SendMessage(m_nId, "New connection");
-
-                            SendAcceptMessage(socket);
-                            // 2015-11-25 cljung : under stress testing, this happens. Don't know why yet, but let's keep it from crashing
-                            try
-                            {
-                                InitialiseSocketHandler(socket);
-                            }
-                            catch (System.ObjectDisposedException ode)
-                            {
-                                Trace.TraceError($"ObjectDisposedException initializing client socket:\r\n{ode}");
-                                m_nId--;
-                                socket.CloseSafelly();
-                            }
                         }
                     }
                 }
-            }
-            else
-            {
-                FtpServerMessageHandler.SendMessage(0, "Error in starting FTP server");
             }
         }
 
@@ -329,7 +328,7 @@ namespace AzureFtpServer.Ftp
             Trace.WriteLine($"{nId}: {sMessage}", "FtpServerMessage");
         }
 
-        private static string FileName => $"ftplog_{DateTime.UtcNow.ToString("yyyyMMdd")}_{FtpServer.ComputerName}.log";
+        private static string FileName => $"ftplog_{DateTime.UtcNow:yyyyMMdd}_{FtpServer.ComputerName}.log";
         private static readonly object LogFileLock = new object();
 
         public static void LogWrite(string comment)
@@ -343,14 +342,15 @@ namespace AzureFtpServer.Ftp
             {
                 DateTime utcNow = DateTime.UtcNow;
                 string filename = Path.Combine(FtpServer.m_logPath, FileName);
-                string logdata = $"{utcNow.ToString("yyyy-MM-dd HH:mm:ss")} {comment}\r\n";
+                string logdata = $"{utcNow:yyyy-MM-dd HH:mm:ss} {comment}\r\n";
                 lock (LogFileLock)
                 {
                     File.AppendAllText(filename, logdata);
                 }
             }
-            catch // can't fail
+            catch 
             {
+                // can't fail
             }
         }
         public static void LogWrite( FtpCommandHandler ch, string sMessage, int retCode, long elapsedMs )
@@ -379,8 +379,9 @@ namespace AzureFtpServer.Ftp
                     File.AppendAllText(filename, logdata);
                 }
             }
-            catch // can't fail
+            catch 
             {
+                // can't fail
             }
         }
 

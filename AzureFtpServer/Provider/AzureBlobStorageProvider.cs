@@ -73,13 +73,12 @@ namespace AzureFtpServer.Provider {
             //_blobClient..Timeout = new TimeSpan(0, 0, 0, 5);
 
             _container = _blobClient.GetContainerReference(ContainerName);
-            string sasUrl = "";
             try
             {
                 _container.FetchAttributes();
                 //sasUrl = GetContainerSasUri(_container);
             }
-            catch (StorageException se)
+            catch (StorageException)
             {
                 Trace.WriteLine($"Create new container: {ContainerName}", "Information");
                 _container.CreateIfNotExists();

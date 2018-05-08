@@ -75,6 +75,8 @@ namespace AzureFtpServer.Ftp
             m_theMonitorThread = new Thread(MonitorSafelly);
             m_theMonitorThread.Start();
         }
+
+
         public TcpClient Socket => m_theSocket;
         private readonly CancellationTokenSource cancelationSource = new CancellationTokenSource();
 
@@ -146,9 +148,20 @@ namespace AzureFtpServer.Ftp
             {
                 FtpServerMessageHandler.SendMessage(m_nId, "Connection closed");
                 m_theSocket.CloseSafelly();
+                lock (lastActiveLock)
+                {
+                    //wake up monitor thread
+                    //to exit it immediatelly
+                    //othewise monitor threads can pile up
+                    //when a lot of new connections is made 
+                    //which can lead to memory issues
+                    exitMonitorThread = true;
+                    Monitor.Pulse(lastActiveLock);
+                }
             }
         }
 
+        private bool exitMonitorThread;
         private void ThreadMonitor()
         {
             while (m_theThread.IsAlive)
@@ -158,6 +171,11 @@ namespace AzureFtpServer.Ftp
                 TimeSpan timeSpan;
                 lock (lastActiveLock)
                 {
+                    if (exitMonitorThread)
+                    {
+                        return;
+                    }
+
                     lastActivityCopy = m_lastActiveTime;
                     timeSpan = currentTime - m_lastActiveTime;
                 }
@@ -174,10 +192,12 @@ namespace AzureFtpServer.Ftp
 
                     return;
                 }
-                Thread.Sleep(1000 * m_maxIdleSeconds);
-            }
 
-            return; // only monitor the work thread
+                lock (lastActiveLock)
+                {
+                    Monitor.Wait(TimeSpan.FromSeconds(m_maxIdleSeconds));
+                }
+            }
         }
 
         #endregion

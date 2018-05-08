@@ -21,7 +21,7 @@ namespace AzureFtpServer.FtpCommands
 
             if (ConnectionObject.Login(sMessage))
             {
-                FtpServer.LogWrite(this, "******", 220, 0);
+                FtpServer.LogWrite(this, "******", 230, 0);
                 return GetMessage(230, "Password ok, FTP server ready");
             }
             else
