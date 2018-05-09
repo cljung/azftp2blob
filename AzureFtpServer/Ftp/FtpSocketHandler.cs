@@ -200,7 +200,7 @@ namespace AzureFtpServer.Ftp
 
                 lock (lastActiveLock)
                 {
-                    Monitor.Wait(TimeSpan.FromSeconds(m_maxIdleSeconds));
+                    Monitor.Wait(lastActiveLock, TimeSpan.FromSeconds(m_maxIdleSeconds));
                 }
             }
         }
