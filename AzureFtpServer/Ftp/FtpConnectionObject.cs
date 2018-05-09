@@ -6,6 +6,7 @@ using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.FtpCommands;
 using AzureFtpServer.Ftp;
 using AzureFtpServer.General;
+using AzureFtpServer.Security;
 
 namespace AzureFtpServer.Ftp
 {
@@ -34,14 +35,15 @@ namespace AzureFtpServer.Ftp
 
         #region Construction
 
-        public FtpConnectionObject(IFileSystemClassFactory fileSystemClassFactory, int nId, TcpClient socket)
+        public FtpConnectionObject(IFileSystemClassFactory fileSystemClassFactory, int nId, TcpClient socket,
+            InvalidAttemptCounter invalidLoginCounter)
             : base(nId, socket)
         {
             m_theCommandHashTable = new Hashtable();
             m_fileSystemClassFactory = fileSystemClassFactory;
             isLogged = false;
             m_useDataSocket = false;
-            LoadCommands();
+            LoadCommands(invalidLoginCounter);
         }
 
         #endregion
@@ -67,7 +69,7 @@ namespace AzureFtpServer.Ftp
             return true;
         }
 
-        private void LoadCommands()
+        private void LoadCommands(InvalidAttemptCounter invalidLoginCounter)
         {
             #region RFC959: Base Commands
 
@@ -84,7 +86,7 @@ namespace AzureFtpServer.Ftp
             AddCommand(new ModeCommandHandler(this));
             AddCommand(new NlstCommandHandler(this));
             AddCommand(new NoopCommandHandler(this));
-            AddCommand(new PasswordCommandHandler(this));
+            AddCommand(new PasswordCommandHandler(this, invalidLoginCounter));
             AddCommand(new PasvCommandHandler(this));
             AddCommand(new PortCommandHandler(this));
             AddCommand(new PwdCommandHandler(this));
@@ -103,7 +105,7 @@ namespace AzureFtpServer.Ftp
             AddCommand(new StouCommandHandler(this));
             AddCommand(new SystemCommandHandler(this));
             AddCommand(new TypeCommandHandler(this));
-            AddCommand(new UserCommandHandler(this));
+            AddCommand(new UserCommandHandler(this, invalidLoginCounter));
             
             #endregion
 

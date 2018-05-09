@@ -44,7 +44,17 @@ namespace AzureFtpServer.FtpCommands
 
         public void Process(string sMessage)
         {
-            SendMessage(OnProcess(sMessage));
+            try
+            {
+                string reply = OnProcess(sMessage);
+                SendMessage(reply);
+            }
+            catch (FtpCommandException commandEx)
+            {
+                //send message to client, then rethrow
+                SendMessage(commandEx.MessageToClient);
+                throw;
+            }
         }
 
         protected virtual string OnProcess(string sMessage)

@@ -8,6 +8,7 @@ using AzureFtpServer.Extensions;
 using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.General;
 using AzureFtpServer.Provider;
+using AzureFtpServer.Security;
 
 namespace AzureFtpServer.Ftp
 {
@@ -54,7 +55,7 @@ namespace AzureFtpServer.Ftp
 
         #region Methods
 
-        public void Start(TcpClient socket, System.Text.Encoding encoding)
+        public void Start(TcpClient socket, System.Text.Encoding encoding, InvalidAttemptCounter invalidLoginCounter)
         {
             m_theSocket = socket;
 
@@ -66,7 +67,7 @@ namespace AzureFtpServer.Ftp
                 m_lastActiveTime = DateTime.UtcNow;
             }
 
-            m_theCommands = new FtpConnectionObject(m_fileSystemClassFactory, m_nId, socket);
+            m_theCommands = new FtpConnectionObject(m_fileSystemClassFactory, m_nId, socket, invalidLoginCounter);
             m_theCommands.Encoding = encoding;
 
             m_theThread = new Thread(RunSafelly);
@@ -143,6 +144,10 @@ namespace AzureFtpServer.Ftp
             }
             catch (OperationCanceledException)
             {
+            }
+            catch (UserBlockedException ube)
+            {
+                FtpServer.LogWrite(ube.Message);
             }
             finally
             {

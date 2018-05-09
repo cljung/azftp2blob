@@ -13,6 +13,7 @@ using AzureFtpServer.Extensions;
 using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.General;
 using AzureFtpServer.FtpCommands;
+using AzureFtpServer.Security;
 
 namespace AzureFtpServer.Ftp
 {
@@ -26,6 +27,8 @@ namespace AzureFtpServer.Ftp
 
         private readonly List<FtpSocketHandler> m_apConnections;
         private readonly IFileSystemClassFactory m_fileSystemClassFactory;
+        private readonly InvalidAttemptCounter m_invalidLogonCounter;
+
         private int m_nId;
         private TcpListener m_socketListen;
         private Thread m_theThread;
@@ -58,6 +61,9 @@ namespace AzureFtpServer.Ftp
         {
             m_apConnections = new List<FtpSocketHandler>();
             m_fileSystemClassFactory = fileSystemClassFactory;
+
+            InvalidLogonCheckOptions logonCheckOpts = new InvalidLogonCheckOptions();
+            m_invalidLogonCounter = new InvalidAttemptCounter(logonCheckOpts);
         }
 
         ~FtpServer()
@@ -289,7 +295,7 @@ namespace AzureFtpServer.Ftp
 
                 // get encoding for the socket connection
 
-                handler.Start(socket, m_encoding);
+                handler.Start(socket, m_encoding, m_invalidLogonCounter);
 
                 m_apConnections.Add(handler);
 

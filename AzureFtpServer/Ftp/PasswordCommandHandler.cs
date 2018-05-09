@@ -1,4 +1,5 @@
 using AzureFtpServer.Ftp;
+using AzureFtpServer.Security;
 
 namespace AzureFtpServer.FtpCommands
 {
@@ -8,27 +9,32 @@ namespace AzureFtpServer.FtpCommands
     /// </summary>
     internal class PasswordCommandHandler : FtpCommandHandler
     {
-        public PasswordCommandHandler(FtpConnectionObject connectionObject)
+        private readonly InvalidAttemptCounter invalidLoginCounter;
+
+        public PasswordCommandHandler(FtpConnectionObject connectionObject, InvalidAttemptCounter invalidLoginCounter)
             : base("PASS", connectionObject)
         {
+            this.invalidLoginCounter = invalidLoginCounter;
         }
 
         protected override string OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
             if (sMessage == "")
-                return GetMessage(501, string.Format("{0} needs a parameter", Command));
+            {
+                return GetMessage(501, $"{Command} needs a parameter");
+            }
 
             if (ConnectionObject.Login(sMessage))
             {
                 FtpServer.LogWrite(this, "******", 230, 0);
+                invalidLoginCounter.OnSuccesfullLogin(ConnectionObject.User);
                 return GetMessage(230, "Password ok, FTP server ready");
             }
-            else
-            {
-                FtpServer.LogWrite(this, "******", 530, 0);
-                return GetMessage(530, "Username or password incorrect");
-            }
+
+            FtpServer.LogWrite(this, "******", 530, 0);
+            invalidLoginCounter.OnInvalidLogin(ConnectionObject.User);
+            return GetMessage(530, "Username or password incorrect");
         }
     }
 }
