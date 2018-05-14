@@ -293,10 +293,6 @@ namespace AzureFtpServer.Ftp
                 var handler = new FtpSocketHandler(m_fileSystemClassFactory, m_nId);
                 handler.Closed += handler_Closed;
 
-                // get encoding for the socket connection
-
-                handler.Start(socket, m_encoding, m_invalidLogonCounter);
-
                 m_apConnections.Add(handler);
 
                 FtpServer.LogWrite(
@@ -306,6 +302,13 @@ namespace AzureFtpServer.Ftp
                     "Information");
 
                 NewConnection?.Invoke(m_nId);
+
+                // get encoding for the socket connection
+                // Start must be moved at the end
+                // otherwise we have a race condition: client can cause connection close
+                // before we log new connection, which will result in ObjectDisposedException
+                // (when an attempt to access RemoteEndPoint is made)
+                handler.Start(socket, m_encoding, m_invalidLogonCounter);
             }
         }
 
