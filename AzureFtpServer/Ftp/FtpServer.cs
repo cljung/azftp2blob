@@ -168,6 +168,7 @@ namespace AzureFtpServer.Ftp
 
                         SendAcceptMessage(socket);
                         // 2015-11-25 cljung : under stress testing, this happens. Don't know why yet, but let's keep it from crashing
+                        //should be fixed in 0f706e0
                         try
                         {
                             InitialiseSocketHandler(socket);
