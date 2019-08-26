@@ -142,8 +142,9 @@ namespace AzureFtpServer.Ftp
                     m_theCommands.Process(abData);
                 } while (nReceived > 0);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException oce)
             {
+                FtpServer.LogWrite($"operation was canceled: {oce}");
             }
             catch (UserBlockedException ube)
             {

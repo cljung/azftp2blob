@@ -34,12 +34,12 @@ namespace AzureFtpServer.Azure
             return inner.GetDirectoryInfo(sPath);
         }
 
-        public string[] GetFiles(string sDirPath)
+        public IFileInfo[] GetFiles(string sDirPath)
         {
             return inner.GetFiles(sDirPath);
         }
 
-        public string[] GetDirectories(string sDirPath)
+        public IFileInfo[] GetDirectories(string sDirPath)
         {
             return inner.GetDirectories(sDirPath);
         }

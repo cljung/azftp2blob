@@ -7,7 +7,7 @@ namespace AzureFtpServer.Azure
     {
         // Convert a string instance of a URI to a relative FTP path
         // Return the file name or the folder name
-        public static string ToFtpPath(string s)
+        public static string ToFtpPath(this string s)
         {
             bool isDir = s.EndsWith(@"/");
 

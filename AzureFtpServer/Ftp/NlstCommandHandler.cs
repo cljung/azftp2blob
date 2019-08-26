@@ -1,4 +1,5 @@
 using AzureFtpServer.Ftp;
+using AzureFtpServer.Ftp.FileSystem;
 
 namespace AzureFtpServer.FtpCommands
 {
@@ -13,7 +14,7 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string BuildReply(string[] asFiles, string[] asDirectories)
+        protected override string BuildReply(IFileInfo[] asFiles, IFileInfo[] asDirectories)
         {
             return BuildShortReply(asFiles, asDirectories);
         }

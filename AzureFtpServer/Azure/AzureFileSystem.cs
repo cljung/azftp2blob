@@ -60,11 +60,11 @@ namespace AzureFtpServer.Azure
         /// </summary>
         /// <param name="sDirPath">directory path</param>
         /// <returns>an arry of filenames</returns>
-        public string[] GetFiles(string sDirPath)
+        public IFileInfo[] GetFiles(string sDirPath)
         {
             IEnumerable<CloudBlockBlob> files = _provider.GetFileListing(sDirPath);
-            string[] result = files.Select(r => r.Uri.AbsolutePath.ToString()).ToArray().ToFtpPath(sDirPath);
-            return result;
+            return files.Select(r => new AzureFileInfo(r)).ToArray();
+
         }
 
         /// <summary>
@@ -72,11 +72,10 @@ namespace AzureFtpServer.Azure
         /// </summary>
         /// <param name="sDirPath">directory path</param>
         /// <returns>an arry of directorynames</returns>
-        public string[] GetDirectories(string sDirPath)
+        public IFileInfo[] GetDirectories(string sDirPath)
         {
             IEnumerable<CloudBlobDirectory> directories = _provider.GetDirectoryListing(sDirPath);
-            string[] result =  directories.Select(r => r.Uri.AbsolutePath.ToString()).ToArray().ToFtpPath(sDirPath);
-            return result;
+            return directories.Select(r => new AzureFileInfo(r)).ToArray();
         }
 
         /// <summary>

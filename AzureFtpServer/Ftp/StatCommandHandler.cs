@@ -1,5 +1,6 @@
 using AzureFtpServer.General;
 using AzureFtpServer.Ftp;
+using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.Ftp.General;
 
 namespace AzureFtpServer.FtpCommands
@@ -27,8 +28,8 @@ namespace AzureFtpServer.FtpCommands
 
             // if no parameter is given, STAT works as LIST
             // but won't use data connection
-            string[] asFiles = null;
-            string[] asDirectories = null;
+            IFileInfo[] asFiles = null;
+            IFileInfo[] asDirectories = null;
 
             // Get the file/dir to list
             string targetToList = GetPath(sMessage);
@@ -62,9 +63,9 @@ namespace AzureFtpServer.FtpCommands
 
             if (targetIsFile)
             {
-                asFiles = new string[1] { targetToList };
+                asFiles = new IFileInfo[] { ConnectionObject.FileSystemObject.GetFileInfo(targetToList) };
                 if (targetIsDir)
-                    asDirectories = new string[1] { FileNameHelpers.AppendDirTag(targetToList) };
+                    asDirectories = new IFileInfo[] { ConnectionObject.FileSystemObject.GetDirectoryInfo(targetToList) };
             }
             // list a directory
             else if (targetIsDir)
@@ -88,7 +89,7 @@ namespace AzureFtpServer.FtpCommands
             return GetMessage(213, string.Format("{0} successful.", Command));
         }
 
-        protected override string BuildReply(string[] asFiles, string[] asDirectories)
+        protected override string BuildReply(IFileInfo[] asFiles, IFileInfo[] asDirectories)
         {
             return BuildLongReply(asFiles, asDirectories);
         }

@@ -1,4 +1,5 @@
 using System.Text;
+using AzureFtpServer.Azure;
 using AzureFtpServer.Ftp;
 using AzureFtpServer.Ftp.General;
 using AzureFtpServer.General;
@@ -25,13 +26,14 @@ namespace AzureFtpServer.FtpCommands
             if (isDirectory)
             {
                 entry.Append("Type=dir; ");
-                string dirName = FileNameHelpers.GetDirectoryName(info.Path());
+                string dirName = FileNameHelpers.GetDirectoryName(info.Path().ToFtpPath());
                 entry.Append(dirName);
             }
             else
             {
-                entry.Append(string.Format("Type=file;Size={0};Modify={1}; ", info.GetSize(), info.GetModifiedTime().ToString("yyyyMMddHHmmss")));
-                entry.Append(FileNameHelpers.GetFileName(info.Path()));
+                entry.Append(
+                    $"Type=file;Size={info.GetSize()};Modify={info.GetModifiedTime():yyyyMMddHHmmss}; ");
+                entry.Append(FileNameHelpers.GetFileName(info.Path().ToFtpPath()));
             }
 
             return entry.ToString();

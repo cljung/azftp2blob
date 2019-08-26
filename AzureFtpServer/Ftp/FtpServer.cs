@@ -338,7 +338,7 @@ namespace AzureFtpServer.Ftp
             Trace.WriteLine($"{nId}: {sMessage}", "FtpServerMessage");
         }
 
-        private static string FileName => $"ftplog_{DateTime.UtcNow:yyyyMMdd}_{FtpServer.ComputerName}.log";
+        private static string FileName => $"ftplog_{CurrentTime:yyyyMMdd}_{FtpServer.ComputerName}.log";
         private static readonly object LogFileLock = new object();
 
         public static void LogWrite(string comment)
@@ -350,7 +350,7 @@ namespace AzureFtpServer.Ftp
 
             try
             {
-                DateTime utcNow = DateTime.UtcNow;
+                DateTime utcNow = CurrentTime;
                 string filename = Path.Combine(FtpServer.m_logPath, FileName);
                 string logdata = $"{utcNow:yyyy-MM-dd HH:mm:ss} {comment}\r\n";
                 lock (LogFileLock)
@@ -363,6 +363,19 @@ namespace AzureFtpServer.Ftp
                 // can't fail
             }
         }
+
+        private static DateTime CurrentTime => LogTimeInUtc ? DateTime.UtcNow : DateTime.Now;
+
+        private static bool LogTimeInUtc
+        {
+            get
+            {
+                string setting = ConfigurationManager.AppSettings["ftp.log.server-time"];
+                //store time in utc by default, unless specified otherwise in config
+                return !bool.TryParse(setting, out bool val) || !val;
+            }
+        }
+
         public static void LogWrite( FtpCommandHandler ch, string sMessage, int retCode, long elapsedMs )
         {
             if (!m_logEnabled)
@@ -370,7 +383,7 @@ namespace AzureFtpServer.Ftp
 
             try
             {
-                DateTime utcNow = DateTime.UtcNow;
+                DateTime utcNow = CurrentTime;
                 string filename = Path.Combine(FtpServer.m_logPath, FileName);
                 // 2015-11-20 23:13:57 213.67.145.199 CLJUNGFTP01\hhh 10.76.190.155 21 RETR 151118+HH-RIG+3-0.avi 226 0 0 5937c9cb-07d9-4fa8-a04d-3bff7fd024e9 /herr/elitserien/1-grundserien/151118+HH-RIG+3-0.avi
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text;
 using AzureFtpServer.Ftp.FileSystem;
@@ -189,7 +190,18 @@ namespace AzureFtpServer.Ftp
             }
             else
             {
-                handler.Process(sValue);
+                FtpServer.LogWrite(handler, "received command", -1, 0);
+                var sw = new Stopwatch();
+                sw.Start();
+                try
+                {
+                    handler.Process(sValue);
+                }
+                finally
+                {
+                    sw.Stop();
+                    FtpServer.LogWrite(handler, "command processed", -1, sw.ElapsedMilliseconds);
+                }
             }
 
             // reset

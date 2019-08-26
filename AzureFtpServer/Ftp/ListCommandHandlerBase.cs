@@ -22,8 +22,8 @@ namespace AzureFtpServer.FtpCommands
         {
             sMessage = sMessage.Trim();
 
-            string[] asFiles = null;
-            string[] asDirectories = null;
+            IFileInfo[] asFiles = null;
+            IFileInfo[] asDirectories = null;
 
             // Get the file/dir to list
             string targetToList = GetPath(sMessage);
@@ -61,9 +61,9 @@ namespace AzureFtpServer.FtpCommands
 
             if (targetIsFile)
             {
-                asFiles = new string[1] { targetToList };
+                asFiles = new IFileInfo[] { ConnectionObject.FileSystemObject.GetFileInfo(targetToList) };
                 if (targetIsDir)
-                    asDirectories = new string[1] { FileNameHelpers.AppendDirTag(targetToList) };
+                    asDirectories = new IFileInfo[] { ConnectionObject.FileSystemObject.GetDirectoryInfo(targetToList) };
             }
             // list a directory
             else if (targetIsDir)
@@ -101,26 +101,26 @@ namespace AzureFtpServer.FtpCommands
             return GetMessage(226, string.Format("{0} successful.", Command));
         }
 
-        protected abstract string BuildReply(string[] asFiles, string[] asDirectories);
+        protected abstract string BuildReply(IFileInfo[] asFiles, IFileInfo[] asDirectories);
 
         // build short list reply, only list the file names
-        protected string BuildShortReply(string[] asFiles, string[] asDirectories)
+        protected string BuildShortReply(IFileInfo[] asFiles, IFileInfo[] asDirectories)
         {
             var stringBuilder = new StringBuilder();
 
             if (asFiles != null)
             {
-                foreach (string filePath in asFiles)
+                foreach (var file in asFiles)
                 {
-                    stringBuilder.Append(string.Format("{0}\r\n", FileNameHelpers.GetFileName(filePath)));
+                    stringBuilder.Append($"{FileNameHelpers.GetFileName(file.Path())}\r\n");
                 }
             }
 
             if (asDirectories != null)
             {
-                foreach (string dirPath in asDirectories)
+                foreach (var dir in asDirectories)
                 {
-                    stringBuilder.Append(string.Format("{0}\r\n", FileNameHelpers.GetDirectoryName(dirPath)));
+                    stringBuilder.Append($"{FileNameHelpers.GetDirectoryName(dir.Path())}\r\n");
                 }
             }
             
@@ -128,26 +128,22 @@ namespace AzureFtpServer.FtpCommands
         }
 
         // build detailed list reply
-        protected string BuildLongReply(string[] asFiles, string[] asDirectories)
+        protected string BuildLongReply(IFileInfo[] asFiles, IFileInfo[] asDirectories)
         {
             var stringBuilder = new StringBuilder();
 
             if (asFiles != null)
             {
-                foreach (string filePath in asFiles)
+                foreach (IFileInfo fileInfo in asFiles)
                 {
-                    IFileInfo fileInfo = ConnectionObject.FileSystemObject.GetFileInfo(filePath);
-
                     stringBuilder.Append(GetLongProperty(fileInfo));
                 }
             }
 
             if (asDirectories != null)
             {
-                foreach (string dirPath in asDirectories)
+                foreach (IFileInfo dirInfo in asDirectories)
                 {
-                    IFileInfo dirInfo = ConnectionObject.FileSystemObject.GetDirectoryInfo(dirPath);
-
                     stringBuilder.Append(GetLongProperty(dirInfo));
                 }
             }

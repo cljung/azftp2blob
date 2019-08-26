@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using AzureFtpServer.General;
 using AzureFtpServer.Ftp;
+using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.Ftp.General;
 
 namespace AzureFtpServer.FtpCommands
@@ -41,17 +42,14 @@ namespace AzureFtpServer.FtpCommands
 
             StringBuilder response = new StringBuilder();
 
-            string[] files = ConnectionObject.FileSystemObject.GetFiles(targetToList);
-            string[] directories = ConnectionObject.FileSystemObject.GetDirectories(targetToList);
+            IFileInfo[] files = ConnectionObject.FileSystemObject.GetFiles(targetToList);
+            IFileInfo[] directories = ConnectionObject.FileSystemObject.GetDirectories(targetToList);
 
             if (files != null)
             {
                 foreach (var file in files)
                 { 
-                    var fileInfo = ConnectionObject.FileSystemObject.GetFileInfo(file);
-                    
-                    response.Append(GenerateEntry(fileInfo));
-                    
+                    response.Append(GenerateEntry(file));
                     response.Append("\r\n");
                 }
             }
@@ -60,9 +58,7 @@ namespace AzureFtpServer.FtpCommands
             {
                 foreach (var dir in directories)
                 {
-                    var dirInfo = ConnectionObject.FileSystemObject.GetDirectoryInfo(dir);
-
-                    response.Append(GenerateEntry(dirInfo));
+                    response.Append(GenerateEntry(dir));
 
                     response.Append("\r\n");
                 }
