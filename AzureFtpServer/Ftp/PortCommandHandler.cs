@@ -14,13 +14,13 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             string[] asData = sMessage.Split(new[] {','});
 
             if (asData.Length != 6)
             {
-                return GetMessage(501, string.Format("{0}: Syntax error in parameters", Command));
+                return new FtpResponse(501, $"{Command}: Syntax error in parameters");
             }
 
             ConnectionObject.DataConnectionType = DataConnectionType.Active;
@@ -30,8 +30,7 @@ namespace AzureFtpServer.FtpCommands
             ConnectionObject.PortCommandSocketPort = nSocketPort;
             ConnectionObject.PortCommandSocketAddress = string.Join(".", asData, 0, 4);
 
-            FtpServer.LogWrite(this, sMessage, 200, 0);
-            return GetMessage(200, string.Format("{0} successful.", Command));
+            return new FtpResponse(200, $"{Command} successful.");
         }
     }
 }

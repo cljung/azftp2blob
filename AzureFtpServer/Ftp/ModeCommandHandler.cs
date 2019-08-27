@@ -13,19 +13,19 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             switch (sMessage.ToUpper())
             {
                 case "S":
                     ConnectionObject.TransmissionMode = TransmissionMode.Stream;
-                    return GetMessage(200, string.Format("{0} command succeeded, transmission mode is Stream", Command));
+                    return new FtpResponse(200, $"{Command} command succeeded, transmission mode is Stream");
                 case "B":
                 case "C":
                     ConnectionObject.TransmissionMode = TransmissionMode.Stream;
-                    return GetMessage(504, string.Format("Transfer mode {0} is not supported, use Stream Mode", sMessage));
+                    return new FtpResponse(504, $"Transfer mode {sMessage} is not supported, use Stream Mode");
                 default:
-                    return GetMessage(501, string.Format("Error - Unknown transimmsion mode \"{0}\"", sMessage));
+                    return new FtpResponse(501, $"Error - Unknown transimmsion mode \"{sMessage}\"");
             }
         }
     }

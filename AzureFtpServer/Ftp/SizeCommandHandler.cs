@@ -14,23 +14,23 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             string sPath = GetPath(sMessage);
 
             if (!ConnectionObject.FileSystemObject.FileExists(sPath))
             {
-                return GetMessage(550, string.Format("File doesn't exist ({0})", sPath));
+                return new FtpResponse(550, $"File doesn't exist ({sPath})");
             }
 
             IFileInfo info = ConnectionObject.FileSystemObject.GetFileInfo(sPath);
 
             if (info == null)
             {
-                return GetMessage(550, "Error in getting file information");
+                return new FtpResponse(550, "Error in getting file information");
             }
 
-            return GetMessage(220, info.GetSize().ToString());
+            return new FtpResponse(220, info.GetSize().ToString());
         }
     }
 }

@@ -13,9 +13,9 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
-            return GetMessage(214, "Log in first, use FEAT to see supported extended commands");
+            return new FtpResponse(214, "Log in first, use FEAT to see supported extended commands");
         }
     }
 }

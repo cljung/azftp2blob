@@ -28,15 +28,11 @@ namespace AzureFtpServer.FtpCommands
 
         #region Properties
 
-        public string Command
-        {
-            get { return m_sCommand; }
-        }
+        public string Command => m_sCommand;
 
-        public FtpConnectionObject ConnectionObject
-        {
-            get { return m_theConnectionObject; }
-        }
+        public FtpConnectionObject ConnectionObject => m_theConnectionObject;
+
+        public virtual bool CanLogCommandArg => true;
 
         #endregion
 
@@ -44,29 +40,45 @@ namespace AzureFtpServer.FtpCommands
 
         public void Process(string sMessage)
         {
+            if (CanLogCommandArg)
+            {
+                FtpServer.LogWrite(this, $"received: {sMessage}", -1, 0);
+            }
+            else
+            {
+                FtpServer.LogWrite(this, "received", -1, 0);
+            }
+            var sw = new Stopwatch();
+            sw.Start();
+
             try
             {
-                string reply = OnProcess(sMessage);
-                SendMessage(reply);
+                FtpResponse reply = OnProcess(sMessage);
+                sw.Stop();
+                FtpServer.LogWrite(this, reply.Message, reply.Code, sw.ElapsedMilliseconds);
+
+                SendMessage(reply.ToString());
             }
             catch (FtpCommandException commandEx)
             {
+                sw.Stop();
+                FtpServer.LogWrite(this, commandEx.MessageToClient, 500, sw.ElapsedMilliseconds);
                 //send message to client, then rethrow
                 SendMessage(commandEx.MessageToClient);
                 throw;
             }
         }
 
-        protected virtual string OnProcess(string sMessage)
+        protected virtual FtpResponse OnProcess(string sMessage)
         {
             Debug.Assert(false, "FtpCommandHandler::OnProcess base called");
-            return "";
+            return null;
         }
 
-        protected string GetMessage(int nReturnCode, string sMessage)
-        {
-            return $"{nReturnCode} {sMessage}\r\n";
-        }
+//        protected string GetMessage(int nReturnCode, string sMessage)
+//        {
+//            return $"{nReturnCode} {sMessage}\r\n";
+//        }
 
         /// <summary>
         /// Get the full path of sPath, will use m_theConnectionObject.CurrentDirectory

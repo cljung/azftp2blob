@@ -13,13 +13,13 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             string[] args = sMessage.Split(' ');
             
             if (args.Length > 2 || args.Length < 1)
             {
-                return GetMessage(501, string.Format("Invalid TYPE parameter: {0}", sMessage));
+                return new FtpResponse(501, $"Invalid TYPE parameter: {sMessage}");
             }
 
             switch (args[0].ToUpper())
@@ -28,8 +28,7 @@ namespace AzureFtpServer.FtpCommands
                     ConnectionObject.DataType = DataType.Ascii;
                     if (args.Length == 1)
                     {
-                        FtpServer.LogWrite(this, sMessage, 200, 0);
-                        return GetMessage(200, string.Format("{0} command succeeded, data type is Ascii", Command));
+                        return new FtpResponse(200, $"{Command} command succeeded, data type is Ascii");
                     }
                     else 
                     {
@@ -37,30 +36,24 @@ namespace AzureFtpServer.FtpCommands
                         { 
                             case "N":
                                 ConnectionObject.FormatControl = FormatControl.NonPrint;
-                                FtpServer.LogWrite(this, sMessage, 200, 0);
-                                return GetMessage(200, string.Format("{0} command succeeded, data type is Ascii, format is NonPrint", Command));
+                                return new FtpResponse(200, $"{Command} command succeeded, data type is Ascii, format is NonPrint");
                             case "T":
                             case "C":
                                 ConnectionObject.FormatControl = FormatControl.NonPrint;
-                                FtpServer.LogWrite(this, sMessage, 504, 0);
-                                return GetMessage(504, string.Format("Format {0} is not supported, use NonPrint format", args[1]));
+                                return new FtpResponse(504, $"Format {args[1]} is not supported, use NonPrint format");
                             default:
-                                FtpServer.LogWrite(this, sMessage, 550, 0);
-                                return GetMessage(550, string.Format("Error - unknown format \"{0}\"", args[1]));
+                                return new FtpResponse(550, $"Error - unknown format \"{args[1]}\"");
                         }
                     }
                 case "I":
                     ConnectionObject.DataType = DataType.Image;
-                    FtpServer.LogWrite(this, sMessage, 200, 0);
-                    return GetMessage(200, string.Format("{0} command succeeded, data type is Image (Binary)", Command));
+                    return new FtpResponse(200, $"{Command} command succeeded, data type is Image (Binary)");
                 case "E":
                 case "L":
                     ConnectionObject.DataType = DataType.Image;
-                    FtpServer.LogWrite(this, sMessage, 504, 0);
-                    return GetMessage(504, string.Format("Data type {0} is not supported, use Image (Binary) type", args[0]));
+                    return new FtpResponse(504, $"Data type {args[0]} is not supported, use Image (Binary) type");
                 default:
-                    FtpServer.LogWrite(this, sMessage, 550, 0);
-                    return GetMessage(550, string.Format("Error - unknown data type \"{0}\"", args[1]));
+                    return new FtpResponse(550, $"Error - unknown data type \"{args[1]}\"");
             }
         }
     }

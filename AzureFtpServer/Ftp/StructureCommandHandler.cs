@@ -13,19 +13,19 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             switch (sMessage.ToUpper())
             {
                 case "F":
                     ConnectionObject.DataStructure = DataStructure.File;
-                    return GetMessage(200, string.Format("{0} command succeeded, Structure is File", Command));
+                    return new FtpResponse(200, $"{Command} command succeeded, Structure is File");
                 case "R":
                 case "P":
                     ConnectionObject.DataStructure = DataStructure.File;
-                    return GetMessage(504, string.Format("Data structure {0} is not supported, use File Structure", sMessage));
+                    return new FtpResponse(504, $"Data structure {sMessage} is not supported, use File Structure");
                 default:
-                    return GetMessage(501, string.Format("Error - Unknown data structure \"{0}\"", sMessage));
+                    return new FtpResponse(501, $"Error - Unknown data structure \"{sMessage}\"");
             }
         }
     }

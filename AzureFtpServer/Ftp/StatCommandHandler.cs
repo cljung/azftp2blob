@@ -17,13 +17,13 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
             
             if (sMessage == "")
             {
-                return GetMessage(211, "Server status: OK");
+                return new FtpResponse(211, "Server status: OK");
             }
 
             // if no parameter is given, STAT works as LIST
@@ -37,7 +37,7 @@ namespace AzureFtpServer.FtpCommands
             // checks the file/dir name
             if (!FileNameHelpers.IsValid(targetToList))
             {
-                return GetMessage(501, string.Format("\"{0}\" is not a valid file/directory name", sMessage));
+                return new FtpResponse(501, $"\"{sMessage}\" is not a valid file/directory name");
             }
 
             // two vars indicating different list results
@@ -76,17 +76,17 @@ namespace AzureFtpServer.FtpCommands
             }
             else
             {
-                return GetMessage(550, string.Format("\"{0}\" not exists", sMessage));
+                return new FtpResponse(550, $"\"{sMessage}\" not exists");
             }
 
             // generate the response
             string sFileList = BuildReply(asFiles, asDirectories);
 
-            SocketHelpers.Send(ConnectionObject.Socket, string.Format("213-Begin STAT \"{0}\":\r\n", sMessage), ConnectionObject.Encoding);
+            SocketHelpers.Send(ConnectionObject.Socket, $"213-Begin STAT \"{sMessage}\":\r\n", ConnectionObject.Encoding);
 
             SocketHelpers.Send(ConnectionObject.Socket, sFileList, ConnectionObject.Encoding);
             
-            return GetMessage(213, string.Format("{0} successful.", Command));
+            return new FtpResponse(213, $"{Command} successful.");
         }
 
         protected override string BuildReply(IFileInfo[] asFiles, IFileInfo[] asDirectories)

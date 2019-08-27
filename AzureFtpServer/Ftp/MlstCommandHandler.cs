@@ -16,7 +16,7 @@ namespace AzureFtpServer.FtpCommands
         { 
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
 
@@ -26,16 +26,18 @@ namespace AzureFtpServer.FtpCommands
             // checks the file/dir name
             if (!FileNameHelpers.IsValid(targetToList))
             {
-                return GetMessage(501, string.Format("\"{0}\" is not a valid file/directory name", sMessage));
+                return new FtpResponse(501, $"\"{sMessage}\" is not a valid file/directory name");
             }
 
             bool targetIsFile = ConnectionObject.FileSystemObject.FileExists(targetToList);
             bool targetIsDir = ConnectionObject.FileSystemObject.DirectoryExists(FileNameHelpers.AppendDirTag(targetToList));
 
             if (!targetIsFile && !targetIsDir)
-                return GetMessage(550, string.Format("\"{0}\" not exists", sMessage));
+            {
+                return new FtpResponse(550, $"\"{sMessage}\" not exists");
+            }
 
-            SocketHelpers.Send(ConnectionObject.Socket, string.Format("250- MLST {0}\r\n", targetToList), ConnectionObject.Encoding);
+            SocketHelpers.Send(ConnectionObject.Socket, $"250- MLST {targetToList}\r\n", ConnectionObject.Encoding);
 
             StringBuilder response = new StringBuilder();
 
@@ -57,7 +59,7 @@ namespace AzureFtpServer.FtpCommands
 
             SocketHelpers.Send(ConnectionObject.Socket, response.ToString(), ConnectionObject.Encoding);
 
-            return GetMessage(250, "MLST successful");
+            return new FtpResponse(250, "MLST successful");
         }
     }
 }

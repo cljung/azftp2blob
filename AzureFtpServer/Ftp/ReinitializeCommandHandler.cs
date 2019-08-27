@@ -13,16 +13,17 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             if (sMessage.Trim() != "")
-                return GetMessage(501, "REIN needs no parameters");
+            {
+                return new FtpResponse(501, "REIN needs no parameters");
+            }
 
             // log out current user
             ConnectionObject.LogOut();
 
-            FtpServer.LogWrite(this, sMessage, 220, 0);
-            return GetMessage(220, "Service ready for new user!");
+            return new FtpResponse(220, "Service ready for new user!");
         }
     }
 }

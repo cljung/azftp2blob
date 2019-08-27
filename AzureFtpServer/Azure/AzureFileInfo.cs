@@ -21,11 +21,8 @@ namespace AzureFtpServer.Azure
             }
         }
 
-        private readonly CloudBlockBlob blob;
         public AzureFileInfo(CloudBlockBlob blob)
         {
-            this.blob = blob;
-
             exists = blob != null;
             if (exists)
             {

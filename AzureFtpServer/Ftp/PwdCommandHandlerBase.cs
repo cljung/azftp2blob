@@ -12,11 +12,10 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             string sDirectory = ConnectionObject.CurrentDirectory;
-            FtpServer.LogWrite(this, sMessage, 257, 0);
-            return GetMessage(257, string.Format("\"{0}\" {1} Successful.", sDirectory, Command));
+            return new FtpResponse(257, $"\"{sDirectory}\" {Command} Successful.");
         }
     }
 }

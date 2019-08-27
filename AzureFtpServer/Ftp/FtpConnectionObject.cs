@@ -185,23 +185,12 @@ namespace AzureFtpServer.Ftp
             if (handler == null)
             {
                 FtpServerMessageHandler.SendMessage(Id, $"\"{sCommand}\" : Unknown command");
-                FtpServer.LogWrite($"{Socket.Client.RemoteEndPoint.ToString()} Unknown/unsupported command: {sCommand}");
+                FtpServer.LogWrite($"{Socket.Client.RemoteEndPoint} Unknown/unsupported command: {sCommand}");
                 SocketHelpers.Send(Socket, "550 Unknown command\r\n", this.Encoding);
             }
             else
             {
-                FtpServer.LogWrite(handler, "received command", -1, 0);
-                var sw = new Stopwatch();
-                sw.Start();
-                try
-                {
-                    handler.Process(sValue);
-                }
-                finally
-                {
-                    sw.Stop();
-                    FtpServer.LogWrite(handler, "command processed", -1, sw.ElapsedMilliseconds);
-                }
+                handler.Process(sValue);
             }
 
             // reset

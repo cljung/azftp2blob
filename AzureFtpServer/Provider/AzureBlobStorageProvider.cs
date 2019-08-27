@@ -256,8 +256,10 @@ namespace AzureFtpServer.Provider {
                 {
                     CloudBlobDirectory bDir = _container.GetDirectoryReference(blobPath);
                     // check whether directory exists
-                    if (bDir.ListBlobs().Count() == 0)
+                    if (!bDir.ListBlobs().Any())
+                    {
                         throw new StorageException();
+                    }
                     o = new AzureCloudFile
                             {
                                 Uri = bDir.Uri,

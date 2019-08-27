@@ -14,14 +14,11 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
             if (ConnectionObject.FileToRename.Length == 0)
             {
-                FtpServer.LogWrite(this, sMessage, 503, 0);
-                return GetMessage(503, "RNTO must be preceded by a RNFR.");
+                return new FtpResponse(503, "RNTO must be preceded by a RNFR.");
             }
 
             string sOldFileName = ConnectionObject.FileToRename;
@@ -32,26 +29,22 @@ namespace AzureFtpServer.FtpCommands
             // check whether the new filename is valid
             if (!FileNameHelpers.IsValid(sNewFileName) || sNewFileName.EndsWith(@"/"))
             {
-                FtpServer.LogWrite(this, sMessage, 553, 0);
-                return GetMessage(553, string.Format("\"{0}\" is not a valid file name", sMessage));
+                return new FtpResponse(553, $"\"{sMessage}\" is not a valid file name");
             }
             
             // check whether the new filename exists
             // note: azure allows file&virtualdir has the same name
             if (ConnectionObject.FileSystemObject.FileExists(sNewFileName))
             {
-                FtpServer.LogWrite(this, sMessage, 553, sw.ElapsedMilliseconds);
-                return GetMessage(553, string.Format("File already exists ({0}).", sMessage));
+                return new FtpResponse(553, $"File already exists ({sMessage}).");
             }
 
             if (!ConnectionObject.FileSystemObject.Move(sOldFileName, sNewFileName))
             {
-                FtpServer.LogWrite(this, sMessage, 553, sw.ElapsedMilliseconds);
-                return GetMessage(553, "Rename failed");
+                return new FtpResponse(553, "Rename failed");
             }
 
-            FtpServer.LogWrite(this, sMessage, 250, sw.ElapsedMilliseconds);
-            return GetMessage(250, "Renamed file successfully.");
+            return new FtpResponse(250, "Renamed file successfully.");
         }
     }
 }

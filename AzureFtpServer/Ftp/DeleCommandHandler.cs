@@ -18,11 +18,13 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
             if (sMessage == "")
-                return GetMessage(501, $"{Command} needs a parameter");
+            {
+                return new FtpResponse(501, $"{Command} needs a parameter");
+            }
 
             string fileToDelete = GetPath(sMessage);
             Trace.TraceInformation($"DELE {fileToDelete} - BEGIN");
@@ -34,30 +36,28 @@ namespace AzureFtpServer.FtpCommands
             if (ConnectionObject.FileSystemObject.FileExists(fileToDelete) )
             {
                 if (!StorageProviderConfiguration.FtpReplaceSlashOnDELE)
+                {
                     fileToDelete = fileToDelete.Replace("//", "/");
+                }
                 else
                 {
-                    FtpServer.LogWrite(this, sMessage, 550, sw.ElapsedMilliseconds);
-                    return GetMessage(550, $"File \"{fileToDelete}\" does not exist.");
+                    return new FtpResponse(550, $"File \"{fileToDelete}\" does not exist.");
                 }
             }
 
             if (!ConnectionObject.FileSystemObject.FileExists(fileToDelete))
             {
-                FtpServer.LogWrite(this, sMessage, 550, sw.ElapsedMilliseconds);
-                return GetMessage(550, $"File \"{fileToDelete}\" does not exist.");
+                return new FtpResponse(550, $"File \"{fileToDelete}\" does not exist.");
             }
 
             if (!ConnectionObject.FileSystemObject.DeleteFile(fileToDelete))
             {
-                FtpServer.LogWrite(this, sMessage, 550, sw.ElapsedMilliseconds);
-                return GetMessage(550, $"Delete file \"{fileToDelete}\" failed.");
+                return new FtpResponse(550, $"Delete file \"{fileToDelete}\" failed.");
             }
             sw.Stop();
             Trace.TraceInformation($"DELE {fileToDelete} - END, Time {sw.ElapsedMilliseconds} ms");
 
-            FtpServer.LogWrite(this, sMessage, 250, sw.ElapsedMilliseconds);
-            return GetMessage(250, $"{Command} successful. Time {sw.ElapsedMilliseconds} ms");
+            return new FtpResponse(250, $"{Command} successful. Time {sw.ElapsedMilliseconds} ms");
         }
     }
 }

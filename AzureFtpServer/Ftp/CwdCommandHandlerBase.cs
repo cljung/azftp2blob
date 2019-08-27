@@ -14,11 +14,13 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
             if (sMessage.Length == 0)
-                return GetMessage(501, string.Format("Syntax error. {0} needs a parameter", Command));
+            {
+                return new FtpResponse(501, $"Syntax error. {Command} needs a parameter");
+            }
 
             // append the final '/' char
             string sMessageFull = FileNameHelpers.AppendDirTag(sMessage);
@@ -29,18 +31,16 @@ namespace AzureFtpServer.FtpCommands
                 // get the parent directory
                 string parentDir = GetParentDir();
                 if (parentDir == null)
-                    return GetMessage(550, "Root directory, cannot change to the parent directory");
+                    return new FtpResponse(550, "Root directory, cannot change to the parent directory");
 
                 ConnectionObject.CurrentDirectory = parentDir;
-                FtpServer.LogWrite(this, sMessage, 200, 0);
-                return GetMessage(200, string.Format("{0} Successful ({1})", Command, parentDir));
+                return new FtpResponse(200, $"{Command} Successful ({parentDir})");
             }
             #endregion
             
             if (!FileNameHelpers.IsValid(sMessageFull))
             {
-                FtpServer.LogWrite(this, sMessage, 550, 0);
-                return GetMessage(550, string.Format("\"{0}\" is not a valid directory string.", sMessage));
+                return new FtpResponse(550, $"\"{sMessage}\" is not a valid directory string.");
             }
 
             // get the new directory path
@@ -49,13 +49,11 @@ namespace AzureFtpServer.FtpCommands
             // checks whether the new directory exists
             if (!ConnectionObject.FileSystemObject.DirectoryExists(newDirectory))
             {
-                FtpServer.LogWrite(this, sMessage, 550, 0);
-                return GetMessage(550, string.Format("\"{0}\" no such directory.", sMessage));
+                return new FtpResponse(550, $"\"{sMessage}\" no such directory.");
             }
 
             ConnectionObject.CurrentDirectory = newDirectory;
-            FtpServer.LogWrite(this, sMessage, 250, 0);
-            return GetMessage(250, string.Format("{0} Successful ({1})", Command, newDirectory));
+            return new FtpResponse(250, $"{Command} Successful ({newDirectory})");
         }
     }
 }

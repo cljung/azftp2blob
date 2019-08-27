@@ -13,9 +13,9 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
-            return GetMessage(202, "Do not require to declare the maximum size of the file beforehand");
+            return new FtpResponse(202, "Do not require to declare the maximum size of the file beforehand");
         }
     }
 }

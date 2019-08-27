@@ -111,6 +111,7 @@
     <Compile Include="Ftp\AbortCommandHandler.cs" />
     <Compile Include="Ftp\AccountCommandHandler.cs" />
     <Compile Include="Ftp\FtpCommandException.cs" />
+    <Compile Include="Ftp\FtpResponse.cs" />
     <Compile Include="Ftp\ReinitializeCommandHandler.cs" />
     <Compile Include="Ftp\RestartCommandHandler.cs" />
     <Compile Include="Ftp\StatCommandHandler.cs" />

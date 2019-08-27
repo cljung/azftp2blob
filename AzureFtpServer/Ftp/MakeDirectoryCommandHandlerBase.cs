@@ -13,35 +13,33 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
             if (sMessage == "")
-                return GetMessage(500, string.Format("{0} needs a paramter", Command));
+            {
+                return new FtpResponse(500, $"{Command} needs a paramter");
+            }
 
             string dirToMake = GetPath(FileNameHelpers.AppendDirTag(sMessage));
 
             // check directory name
             if (!FileNameHelpers.IsValid(dirToMake))
             {
-                FtpServer.LogWrite(this, sMessage, 553, 0);
-                return GetMessage(553, string.Format("\"{0}\": Invalid directory name", sMessage));
+                return new FtpResponse(553, $"\"{sMessage}\": Invalid directory name");
             }
             // check whether directory already exists
             if (ConnectionObject.FileSystemObject.DirectoryExists(dirToMake))
             {
-                FtpServer.LogWrite(this, sMessage, 553, 0);
-                return GetMessage(553, string.Format("Directory \"{0}\" already exists", sMessage));
+                return new FtpResponse(553, $"Directory \"{sMessage}\" already exists");
             }
             // create directory
             if (!ConnectionObject.FileSystemObject.CreateDirectory(dirToMake))
             {
-                FtpServer.LogWrite(this, sMessage, 550, 0);
-                return GetMessage(550, string.Format("Couldn't create directory. ({0})", sMessage));
+                return new FtpResponse(550, $"Couldn't create directory. ({sMessage})");
             }
 
-            FtpServer.LogWrite(this, sMessage, 257, 0);
-            return GetMessage(257, string.Format("{0} successful \"{1}\".", Command, dirToMake));
+            return new FtpResponse(257, $"{Command} successful \"{dirToMake}\".");
         }
     }
 }

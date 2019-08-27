@@ -19,40 +19,35 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
             if (sMessage == "")
-                return GetMessage(501, string.Format("{0} needs a parameter", Command));
+            {
+                return new FtpResponse(501, $"{Command} needs a parameter");
+            }
 
             string sFile = GetPath(sMessage);
 
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
             if (!FileNameHelpers.IsValid(sFile))
             {
-                FtpServer.LogWrite(this, sMessage, 553, sw.ElapsedMilliseconds);
-                return GetMessage(553, string.Format("\"{0}\" is not a valid file name", sMessage));
+                return new FtpResponse(553, $"\"{sMessage}\" is not a valid file name");
             }
 
             var socketData = new FtpDataSocket(ConnectionObject);
-
             if (!socketData.Loaded)
             {
-                return GetMessage(425, "Unable to establish the data connection");
+                return new FtpResponse(425, "Unable to establish the data connection");
             }
 
-            SocketHelpers.Send(ConnectionObject.Socket, GetMessage(150, "Opening connection for data transfer."), ConnectionObject.Encoding);
+            SocketHelpers.Send(ConnectionObject.Socket, new FtpResponse(150, "Opening connection for data transfer."), ConnectionObject.Encoding);
 
             if (!ConnectionObject.FileSystemObject.AppendFile(sFile, socketData.Socket.GetStream()))
             {
-                FtpServer.LogWrite(this, sMessage, 553, sw.ElapsedMilliseconds);
-                return GetMessage(553, $"{Command} error");
+                return new FtpResponse(553, $"{Command} error");
             }
 
-            sw.Stop();
-            FtpServer.LogWrite(this, sMessage, 250, sw.ElapsedMilliseconds);
-            return GetMessage(250, $"{Command} successful");
+            return new FtpResponse(250, $"{Command} successful");
         }
     }
 }

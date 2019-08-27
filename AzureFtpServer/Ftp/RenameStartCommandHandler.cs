@@ -14,24 +14,26 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
 
             if (sMessage.Length == 0)
-                return GetMessage(501, "Syntax error. RNFR needs a parameter");
+            {
+                return new FtpResponse(501, "Syntax error. RNFR needs a parameter");
+            }
 
             string sFile = GetPath(sMessage);
 
             // check whether file exists
             if (!ConnectionObject.FileSystemObject.FileExists(sFile))
             {
-                return GetMessage(550, string.Format("File {0} not exists. Rename directory not supported.", sMessage));
+                return new FtpResponse(550, $"File {sMessage} not exists. Rename directory not supported.");
             }
 
             ConnectionObject.FileToRename = sFile;
 
-            return GetMessage(350, string.Format("Rename file started ({0}).", sFile));
+            return new FtpResponse(350, $"Rename file started ({sFile}).");
         }
     }
 }

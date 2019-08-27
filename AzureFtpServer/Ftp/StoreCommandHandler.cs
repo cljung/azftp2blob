@@ -23,19 +23,19 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
             if (sMessage == "")
             {
-                return GetMessage(501, $"{Command} needs a parameter");
+                return new FtpResponse(501, $"{Command} needs a parameter");
             }
 
             string sFile = GetPath(sMessage);
 
             if (!FileNameHelpers.IsValid(sFile) || sFile.EndsWith(@"/"))
             {
-                return GetMessage(553, $"\"{sMessage}\" is not a valid file name");
+                return new FtpResponse(553, $"\"{sMessage}\" is not a valid file name");
             }
 
             if (ConnectionObject.FileSystemObject.FileExists(sFile))
@@ -43,12 +43,12 @@ namespace AzureFtpServer.FtpCommands
                 // 2015-11-24 cljung : RFC959 says STOR commands overwrite files, so delete if exists
                 if (!StorageProviderConfiguration.FtpOverwriteFileOnSTOR)
                 {
-                    return GetMessage(553, $"File \"{sMessage}\" already exists.");
+                    return new FtpResponse(553, $"File \"{sMessage}\" already exists.");
                 }
                 Trace.TraceInformation($"STOR {sFile} - Deleting existing file");
                 if (!ConnectionObject.FileSystemObject.DeleteFile(sFile))
                 {
-                    return GetMessage(550, $"Delete file \"{sFile}\" failed.");
+                    return new FtpResponse(550, $"Delete file \"{sFile}\" failed.");
                 }
             }
 
@@ -59,7 +59,7 @@ namespace AzureFtpServer.FtpCommands
             {
                 if (!socketData.Loaded)
                 {
-                    return GetMessage(425, "Unable to establish the data connection");
+                    return new FtpResponse(425, "Unable to establish the data connection");
                 }
 
                 Trace.TraceInformation($"STOR {sFile} - BEGIN");
@@ -68,15 +68,14 @@ namespace AzureFtpServer.FtpCommands
                 if (file == null)
                 {
                     socketData.Close(); // close data socket
-                    return GetMessage(550, "Couldn't open file");
+                    return new FtpResponse(550, "Couldn't open file");
                 }
 
-                SocketHelpers.Send(ConnectionObject.Socket, GetMessage(150, "Opening connection for data transfer."),
+                SocketHelpers.Send(ConnectionObject.Socket, new FtpResponse(150, "Opening connection for data transfer."),
                     ConnectionObject.Encoding);
 
                 Stopwatch sw = new Stopwatch();
                 sw.Start();
-
                 // TYPE I, default 
                 if (ConnectionObject.DataType == DataType.Image)
                 {
@@ -92,8 +91,7 @@ namespace AzureFtpServer.FtpCommands
                         {
                             file.Close();
                             socketData.Close();
-                            FtpServer.LogWrite(this, sMessage, 451, sw.ElapsedMilliseconds);
-                            return GetMessage(451, "Write data to Azure error!");
+                            return new FtpResponse(451, "Write data to Azure error!");
                         }
                         nReceived = socketData.Receive(abData);
                     }
@@ -112,8 +110,7 @@ namespace AzureFtpServer.FtpCommands
                     // mustn't reach
                     file.Close();
                     socketData.Close();
-                    FtpServer.LogWrite(this, sMessage, 451, sw.ElapsedMilliseconds);
-                    return GetMessage(451, "Error in transfer data: invalid data type.");
+                    return new FtpResponse(451, "Error in transfer data: invalid data type.");
                 }
 
                 sw.Stop();
@@ -121,25 +118,13 @@ namespace AzureFtpServer.FtpCommands
 
                 // upload notification
                 ConnectionObject.FileSystemObject.Log4Upload(sFile);
-
-                FtpServer.LogWrite(this, sMessage, 226, sw.ElapsedMilliseconds);
-                return GetMessage(226, $"{Command} successful. Time {sw.ElapsedMilliseconds} ms");
+                return new FtpResponse(226, $"{Command} successful. Time {sw.ElapsedMilliseconds} ms");
             }
             finally
             {
                 file?.Close();
                 socketData.Close();
             }
-        }
-
-        private static string BytesToStr(byte[] bytes)
-        {
-            StringBuilder str = new StringBuilder();
-
-            for (int i = 0; i < bytes.Length; i++)
-                str.AppendFormat("{0:X2}", bytes[i]);
-
-            return str.ToString();
         }
     }
 }

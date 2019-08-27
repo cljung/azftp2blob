@@ -14,10 +14,12 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             if (sMessage.Length != 0)
-                return GetMessage(501, "Invalid syntax for FEAT command");
+            {
+                return new FtpResponse(501, "Invalid syntax for FEAT command");
+            }
 
             string response = "211-Extensions supported:\r\n";
             response += " XCUP\r\n";
@@ -31,7 +33,7 @@ namespace AzureFtpServer.FtpCommands
             response += " SIZE\r\n";
             response += "211 END\r\n";
             SocketHelpers.Send(ConnectionObject.Socket, response, ConnectionObject.Encoding);
-            return "";
+            return new FtpResponse(0, "");
         }
     }
 }

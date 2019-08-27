@@ -17,24 +17,24 @@ namespace AzureFtpServer.FtpCommands
             this.invalidLoginCounter = invalidLoginCounter;
         }
 
-        protected override string OnProcess(string sMessage)
+        public override bool CanLogCommandArg => false;
+
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
             if (sMessage == "")
             {
-                return GetMessage(501, $"{Command} needs a parameter");
+                return new FtpResponse(501, $"{Command} needs a parameter");
             }
 
             if (ConnectionObject.Login(sMessage))
             {
-                FtpServer.LogWrite(this, "******", 230, 0);
                 invalidLoginCounter.OnSuccesfullLogin(ConnectionObject.User);
-                return GetMessage(230, "Password ok, FTP server ready");
+                return new FtpResponse(230, "Password ok, FTP server ready");
             }
 
-            FtpServer.LogWrite(this, "******", 530, 0);
             invalidLoginCounter.OnInvalidLogin(ConnectionObject.User);
-            return GetMessage(530, "Username or password incorrect");
+            return new FtpResponse(530, "Username or password incorrect");
         }
     }
 }

@@ -12,10 +12,9 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
-            FtpServer.LogWrite(this, sMessage, 220, 0);
-            return GetMessage(220, "Goodbye");
+            return new FtpResponse(220, "Goodbye");
         }
     }
 }

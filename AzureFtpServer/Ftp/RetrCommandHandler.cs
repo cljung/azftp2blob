@@ -19,12 +19,12 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
             if (sMessage == "")
             {
-                return GetMessage(501, $"{Command} needs a parameter");
+                return new FtpResponse(501, $"{Command} needs a parameter");
             }
 
             string sFilePath = GetPath(sMessage);
@@ -34,8 +34,7 @@ namespace AzureFtpServer.FtpCommands
 
             if (!ConnectionObject.FileSystemObject.FileExists(sFilePath))
             {
-                FtpServer.LogWrite(this, sMessage, 550, sw.ElapsedMilliseconds);
-                return GetMessage(550, $"File \"{sMessage}\" doesn't exist");
+                return new FtpResponse(550, $"File \"{sMessage}\" doesn't exist");
             }
 
             var socketData = new FtpDataSocket(ConnectionObject);
@@ -44,8 +43,7 @@ namespace AzureFtpServer.FtpCommands
             {
                 if (!socketData.Loaded)
                 {
-                    FtpServer.LogWrite(this, sMessage, 425, sw.ElapsedMilliseconds);
-                    return GetMessage(425, "Unable to establish the data connection");
+                    return new FtpResponse(425, "Unable to establish the data connection");
                 }
 
                 SocketHelpers.Send(ConnectionObject.Socket, "150 Starting data transfer, please wait...\r\n",
@@ -54,7 +52,7 @@ namespace AzureFtpServer.FtpCommands
                 file = ConnectionObject.FileSystemObject.OpenFile(sFilePath, false);
                 if (file == null)
                 {
-                    return GetMessage(550, "Couldn't open file");
+                    return new FtpResponse(550, "Couldn't open file");
                 }
 
                 // TYPE I, default
@@ -81,17 +79,13 @@ namespace AzureFtpServer.FtpCommands
                 {
                     file.Close();
                     socketData.Close();
-                    FtpServer.LogWrite(this, sMessage, 451, sw.ElapsedMilliseconds);
-                    return GetMessage(451, "Error in transfer data: invalid data type.");
+                    return new FtpResponse(451, "Error in transfer data: invalid data type.");
                 }
-
-                
 
                 sw.Stop();
                 Trace.TraceInformation($"RETR {sFilePath} - END, Time {sw.ElapsedMilliseconds} ms");
 
-                FtpServer.LogWrite(this, sMessage, 226, sw.ElapsedMilliseconds);
-                return GetMessage(226, $"File download succeeded. Time {sw.ElapsedMilliseconds} ms");
+                return new FtpResponse(226, $"File download succeeded. Time {sw.ElapsedMilliseconds} ms");
             }
             finally
             {

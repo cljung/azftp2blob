@@ -13,10 +13,10 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             // TODO: stop current service & close data connection
-            return GetMessage(226, "Current data connection aborted");
+            return new FtpResponse(226, "Current data connection aborted");
         }
     }
 }

@@ -13,10 +13,10 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             // TODO: stop current service & close data connection
-            return GetMessage(230, "Account information not needed");
+            return new FtpResponse(230, "Account information not needed");
         }
     }
 }

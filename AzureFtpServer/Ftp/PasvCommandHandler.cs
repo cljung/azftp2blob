@@ -44,12 +44,9 @@ namespace AzureFtpServer.FtpCommands
         /// error whe starting TcpListener on passive port
         /// </summary>
         private static readonly HashSet<int> ListeningPassivePorts = new HashSet<int>();
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             ConnectionObject.DataConnectionType = DataConnectionType.Passive;
-
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
 
             //return GetMessage(227, string.Format("Entering Passive Mode ({0})", pasvListenAddress));
 
@@ -69,7 +66,7 @@ namespace AzureFtpServer.FtpCommands
             if (selectedPort == maxPort)
             {
                 FtpServer.LogWrite("unable to select passive ports, looks like too many clients are connected at once");
-                return GetMessage(550, "Too many concurrent PASV requests");
+                return new FtpResponse(550, "Too many concurrent PASV requests");
             }
 
             string pasvListenAddress = GetPassiveAddressInfo(selectedPort);
@@ -81,8 +78,7 @@ namespace AzureFtpServer.FtpCommands
             TcpListener listener = SocketHelpers.CreateTcpListener( ipEndPoint );
             if (listener == null)
             {
-                FtpServer.LogWrite(this, sMessage, 550, 0);
-                return GetMessage(550, $"Couldn't start listener on port {m_nPort}");
+                return new FtpResponse(550, $"Couldn't start listener on port {m_nPort}");
             }
 
             try
@@ -98,7 +94,7 @@ namespace AzureFtpServer.FtpCommands
                 if (completed != 0)
                 {
                     FtpServer.LogWrite("timeout while waiting on PASV connection");
-                    return GetMessage(550, "PASV listener timeout");
+                    return new FtpResponse(550, "PASV listener timeout");
                 }
 
                 ConnectionObject.PassiveSocket = acceptTask.Result;
@@ -106,15 +102,13 @@ namespace AzureFtpServer.FtpCommands
             finally
             {
                 listener.Stop();
-                sw.Stop();
                 lock (ListeningPassivePorts)
                 {
                     ListeningPassivePorts.Remove(selectedPort);
                 }
             }
-            FtpServer.LogWrite(this, sMessage, 0, sw.ElapsedMilliseconds);
 
-            return "";
+            return new FtpResponse(0,"");
         }
 
         private string GetPassiveAddressInfo(int port)

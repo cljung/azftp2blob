@@ -18,7 +18,7 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
 
@@ -28,14 +28,10 @@ namespace AzureFtpServer.FtpCommands
             // Get the file/dir to list
             string targetToList = GetPath(sMessage);
 
-            Stopwatch sw = new Stopwatch();
-            sw.Start();
-
             // checks the file/dir name
             if (!FileNameHelpers.IsValid(targetToList))
             {
-                FtpServer.LogWrite(this, sMessage, 501, 0);
-                return GetMessage(501, string.Format("\"{0}\" is not a valid file/directory name", sMessage));
+                return new FtpResponse(501, $"\"{sMessage}\" is not a valid file/directory name");
             }
 
             // two vars indicating different list results
@@ -47,23 +43,31 @@ namespace AzureFtpServer.FtpCommands
             {
                 targetIsFile = false;
                 if (ConnectionObject.FileSystemObject.DirectoryExists(targetToList))
+                {
                     targetIsDir = true;
+                }
             }
             else
             {
                 // check whether the target to list is a directory
                 if (ConnectionObject.FileSystemObject.DirectoryExists(FileNameHelpers.AppendDirTag(targetToList)))
+                {
                     targetIsDir = true;
+                }
                 // check whether the target to list is a file
                 if (ConnectionObject.FileSystemObject.FileExists(targetToList))
+                {
                     targetIsFile = true;
+                }
             }
 
             if (targetIsFile)
             {
-                asFiles = new IFileInfo[] { ConnectionObject.FileSystemObject.GetFileInfo(targetToList) };
+                asFiles = new [] { ConnectionObject.FileSystemObject.GetFileInfo(targetToList) };
                 if (targetIsDir)
-                    asDirectories = new IFileInfo[] { ConnectionObject.FileSystemObject.GetDirectoryInfo(targetToList) };
+                {
+                    asDirectories = new[] {ConnectionObject.FileSystemObject.GetDirectoryInfo(targetToList)};
+                }
             }
             // list a directory
             else if (targetIsDir)
@@ -74,20 +78,18 @@ namespace AzureFtpServer.FtpCommands
             }
             else 
             {
-                FtpServer.LogWrite(this, sMessage, 550, sw.ElapsedMilliseconds);
-                return GetMessage(550, string.Format("\"{0}\" not exists", sMessage));
+                return new FtpResponse(550, $"\"{sMessage}\" not exists");
             }
 
             var socketData = new FtpDataSocket(ConnectionObject);
 
             if (!socketData.Loaded)
             {
-                FtpServer.LogWrite(this, sMessage, 425, sw.ElapsedMilliseconds);
-                return GetMessage(425, "Unable to establish the data connection");
+                return new FtpResponse(425, "Unable to establish the data connection");
             }
 
             // prepare to write response to data channel
-            SocketHelpers.Send(ConnectionObject.Socket, string.Format("150 Opening data connection for {0}\r\n", Command), ConnectionObject.Encoding);
+            SocketHelpers.Send(ConnectionObject.Socket, $"150 Opening data connection for {Command}\r\n", ConnectionObject.Encoding);
 
             // generate the response
             string sFileList = BuildReply(asFiles, asDirectories);
@@ -96,9 +98,7 @@ namespace AzureFtpServer.FtpCommands
             socketData.Send(sFileList, Encoding.UTF8);
             socketData.Close();
 
-            sw.Stop();
-            FtpServer.LogWrite(this, sMessage, 226, sw.ElapsedMilliseconds);
-            return GetMessage(226, string.Format("{0} successful.", Command));
+            return new FtpResponse(226, $"{Command} successful.");
         }
 
         protected abstract string BuildReply(IFileInfo[] asFiles, IFileInfo[] asDirectories);

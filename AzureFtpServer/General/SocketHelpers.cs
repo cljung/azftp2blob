@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Security.Cryptography;
+using AzureFtpServer.Ftp;
 using AzureFtpServer.Provider;
 
 namespace AzureFtpServer.General
@@ -50,6 +51,11 @@ namespace AzureFtpServer.General
         {
             byte[] abMessage = encoding.GetBytes(sMessage);
             return Send(socket, abMessage);
+        }
+
+        public static bool Send(TcpClient socket, FtpResponse reply, Encoding encoding)
+        {
+            return Send(socket, reply.ToString(), encoding);
         }
 
         public static TcpClient CreateTcpClient(string sAddress, int nPort)

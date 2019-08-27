@@ -17,7 +17,7 @@ namespace AzureFtpServer.FtpCommands
         { 
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
 
@@ -27,7 +27,7 @@ namespace AzureFtpServer.FtpCommands
             // checks the dir name
             if (!FileNameHelpers.IsValid(targetToList))
             {
-                return GetMessage(501, string.Format("\"{0}\" is not a valid directory name", sMessage));
+                return new FtpResponse(501, $"\"{sMessage}\" is not a valid directory name");
             }
 
             // specify the directory tag
@@ -36,7 +36,9 @@ namespace AzureFtpServer.FtpCommands
             bool targetIsDir = ConnectionObject.FileSystemObject.DirectoryExists(targetToList);
 
             if (!targetIsDir)
-                return GetMessage(550, string.Format("Directory \"{0}\" not exists", targetToList));
+            {
+                return new FtpResponse(550, $"Directory \"{targetToList}\" not exists");
+            }
 
             #region Generate response
 
@@ -72,7 +74,7 @@ namespace AzureFtpServer.FtpCommands
 
             if (!socketData.Loaded)
             {
-                return GetMessage(425, "Unable to establish the data connection");
+                return new FtpResponse(425, "Unable to establish the data connection");
             }
 
             SocketHelpers.Send(ConnectionObject.Socket, "150 Opening data connection for MLSD\r\n", ConnectionObject.Encoding);
@@ -83,7 +85,7 @@ namespace AzureFtpServer.FtpCommands
 
             #endregion
 
-            return GetMessage(226, "MLSD successful");
+            return new FtpResponse(226, "MLSD successful");
         }
     }
 }

@@ -13,39 +13,34 @@ namespace AzureFtpServer.FtpCommands
         {
         }
 
-        protected override string OnProcess(string sMessage)
+        protected override FtpResponse OnProcess(string sMessage)
         {
             sMessage = sMessage.Trim();
             if (sMessage == "")
-                return GetMessage(501, string.Format("{0} needs a parameter", Command));
+            {
+                return new FtpResponse(501, $"{Command} needs a parameter");
+            }
 
             string dirToRemove = GetPath(FileNameHelpers.AppendDirTag(sMessage));
 
             // check whether directory exists
             if (!ConnectionObject.FileSystemObject.DirectoryExists(dirToRemove))
             {
-                FtpServer.LogWrite(this, sMessage, 550, 0);
-                return GetMessage(550, string.Format("Directory \"{0}\" does not exist", dirToRemove));
+                return new FtpResponse(550, $"Directory \"{dirToRemove}\" does not exist");
             }
 
             // can not delete root directory
             if (dirToRemove == "/")
             {
-                FtpServer.LogWrite(this, sMessage, 553, 0);
-                return GetMessage(553, "Can not remove root directory");
+                return new FtpResponse(553, "Can not remove root directory");
             }
 
             // delete directory
             if (ConnectionObject.FileSystemObject.DeleteDirectory(dirToRemove))
             {
-                FtpServer.LogWrite(this, sMessage, 250, 0);
-                return GetMessage(250, string.Format("{0} successful.", Command));
+                return new FtpResponse(250, $"{Command} successful.");
             }
-            else
-            {
-                FtpServer.LogWrite(this, sMessage, 550, 0);
-                return GetMessage(550, string.Format("Couldn't remove directory ({0}).", dirToRemove));
-            }
+            return new FtpResponse(550, $"Couldn't remove directory ({dirToRemove}).");
         }
     }
 }
