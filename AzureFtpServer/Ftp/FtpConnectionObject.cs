@@ -136,9 +136,8 @@ namespace AzureFtpServer.Ftp
             m_theCommandHashTable.Add(handler.Command, handler);
         }
 
-        public void Process(byte[] abData)
+        public void Process(string sMessage)
         {
-            string sMessage = this.Encoding.GetString(abData);
             // 2015-11-26 cljung : BUG .IndexOf returns -1 if search item isn't found. Substring throws exception with -1
             int pos = sMessage.IndexOf('\r');
             if (pos >= 0)

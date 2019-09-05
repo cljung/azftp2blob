@@ -64,7 +64,7 @@ namespace AzureFtpServer.Ftp
 
             lock (lastActiveLock)
             {
-                m_lastActiveTime = DateTime.UtcNow;
+                m_lastActiveTime = FtpServer.CurrentTime;
             }
 
             m_theCommands = new FtpConnectionObject(m_fileSystemClassFactory, m_nId, socket, invalidLoginCounter);
@@ -136,10 +136,17 @@ namespace AzureFtpServer.Ftp
                     nReceived = t.Result;
                     lock (lastActiveLock)
                     {
-                        m_lastActiveTime = DateTime.UtcNow;
+                        m_lastActiveTime = FtpServer.CurrentTime;
                     }
 
-                    m_theCommands.Process(abData);
+                    if (nReceived > 0)
+                    {
+                        string[] commands = SplitCommands(abData, nReceived);
+                        foreach (var command in commands)
+                        {
+                            m_theCommands.Process(command);
+                        }
+                    }
                 } while (nReceived > 0);
             }
             catch (OperationCanceledException oce)
@@ -167,12 +174,38 @@ namespace AzureFtpServer.Ftp
             }
         }
 
+        private static readonly string[] NoCommands = new string[0];
+        private static readonly char[] LineSeparators = new [] {'\r', '\n'};
+        private string[] SplitCommands(byte[] data, int bytesRead)
+        {
+            if (bytesRead == 0)
+            {
+                return NoCommands;
+            }
+
+            //RFC 959 section 5.4 states that:
+            //"The user should
+            //wait for this initial primary success or failure response before
+            //sending further commands."
+            //however a buggy client may send multiple commands before server issues a response
+            //we will try to handle this gracefully (though RFC does not require server to do so).
+            string sMessage = m_theCommands.Encoding.GetString(data, 0, bytesRead);
+            string[] commands = sMessage.Split(LineSeparators, StringSplitOptions.RemoveEmptyEntries);
+            if (commands.Length > 1)
+            {
+                FtpServer.LogWrite(m_theCommands, 
+                    $"received multiple commands in one request: {string.Join(Environment.NewLine, commands)}");
+            }
+
+            return commands;
+        }
+
         private bool exitMonitorThread;
         private void ThreadMonitor()
         {
             while (m_theThread.IsAlive)
             {
-                DateTime currentTime = DateTime.UtcNow;
+                DateTime currentTime = FtpServer.CurrentTime;
                 DateTime lastActivityCopy;
                 TimeSpan timeSpan;
                 lock (lastActiveLock)
