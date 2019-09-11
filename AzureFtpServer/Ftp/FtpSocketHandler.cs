@@ -151,7 +151,10 @@ namespace AzureFtpServer.Ftp
             }
             catch (OperationCanceledException oce)
             {
-                FtpServer.LogWrite($"operation was canceled: {oce}");
+                if (!cancelationSource.IsCancellationRequested)
+                {
+                    FtpServer.LogWrite(m_theCommands, $"operation was cancelled: {oce}");   
+                }
             }
             catch (UserBlockedException ube)
             {
@@ -207,7 +210,6 @@ namespace AzureFtpServer.Ftp
             {
                 DateTime currentTime = FtpServer.CurrentTime;
                 DateTime lastActivityCopy;
-                TimeSpan timeSpan;
                 lock (lastActiveLock)
                 {
                     if (exitMonitorThread)
@@ -216,9 +218,9 @@ namespace AzureFtpServer.Ftp
                     }
 
                     lastActivityCopy = m_lastActiveTime;
-                    timeSpan = currentTime - m_lastActiveTime;
                 }
 
+                TimeSpan timeSpan = currentTime - m_lastActiveTime;
                 // has been idle for a long time
                 if ((timeSpan.TotalSeconds > m_maxIdleSeconds) && !m_theCommands.DataSocketOpen) 
                 {
@@ -234,7 +236,7 @@ namespace AzureFtpServer.Ftp
 
                 lock (lastActiveLock)
                 {
-                    Monitor.Wait(lastActiveLock, TimeSpan.FromSeconds(m_maxIdleSeconds));
+                    Monitor.Wait(lastActiveLock, TimeSpan.FromSeconds(m_maxIdleSeconds / 2.0));
                 }
             }
         }
