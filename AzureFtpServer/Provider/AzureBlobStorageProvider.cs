@@ -360,19 +360,10 @@ namespace AzureFtpServer.Provider {
         {
             path = path.ToAzurePath();
 
-            string blobName = String.Concat(path, "folder_cant_be_empty.txt");
-
             try
             {
-                CloudBlockBlob blob = _container.GetBlockBlobReference(blobName);
-
-                string message = "#REQUIRED: At least one file is required to be present in this folder.";
-                byte[] msg = Encoding.UTF8.GetBytes(message);
-                blob.UploadFromByteArray(msg, 0, msg.Length);
-
-                BlobProperties props = blob.Properties;
-                props.ContentType = "text/text";
-                blob.SetProperties();
+                var blob = _container.GetBlockBlobReference(path);
+                blob.UploadFromByteArray(Array.Empty<byte>(), 0, 0);
             }
             catch (Exception)
             {
