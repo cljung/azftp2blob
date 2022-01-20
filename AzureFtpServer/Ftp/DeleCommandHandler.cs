@@ -30,19 +30,12 @@ namespace AzureFtpServer.FtpCommands
             Trace.TraceInformation($"DELE {fileToDelete} - BEGIN");
             Stopwatch sw = new Stopwatch();
             sw.Start();
-            
+
             // 2015-11-24 cljung : Q&D fix. If path contains double slashes, reduce to single since
             //                     NTFS/etc treams sub1//sub2 as sub1/sub two but Azure Blob Storage doesn't
-            if (ConnectionObject.FileSystemObject.FileExists(fileToDelete) )
+            if (!StorageProviderConfiguration.FtpReplaceSlashOnDELE)
             {
-                if (!StorageProviderConfiguration.FtpReplaceSlashOnDELE)
-                {
-                    fileToDelete = fileToDelete.Replace("//", "/");
-                }
-                else
-                {
-                    return new FtpResponse(550, $"File \"{fileToDelete}\" does not exist.");
-                }
+                fileToDelete = fileToDelete.Replace("//", "/");
             }
 
             if (!ConnectionObject.FileSystemObject.FileExists(fileToDelete))
