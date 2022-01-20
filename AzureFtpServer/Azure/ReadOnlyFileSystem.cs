@@ -39,9 +39,9 @@ namespace AzureFtpServer.Azure
             return inner.GetFiles(sDirPath);
         }
 
-        public IFileInfo[] GetDirectories(string sDirPath)
+        public IFileInfo[] GetDirectories(string sDirPath, bool actualCreationTime)
         {
-            return inner.GetDirectories(sDirPath);
+            return inner.GetDirectories(sDirPath, actualCreationTime);
         }
 
         public bool DirectoryExists(string sDirPath)

@@ -3,6 +3,7 @@ using AzureFtpServer.General;
 using AzureFtpServer.Ftp;
 using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.Ftp.General;
+using AzureFtpServer.Provider;
 
 namespace AzureFtpServer.FtpCommands
 {
@@ -45,7 +46,7 @@ namespace AzureFtpServer.FtpCommands
             StringBuilder response = new StringBuilder();
 
             IFileInfo[] files = ConnectionObject.FileSystemObject.GetFiles(targetToList);
-            IFileInfo[] directories = ConnectionObject.FileSystemObject.GetDirectories(targetToList);
+            IFileInfo[] directories = ConnectionObject.FileSystemObject.GetDirectories(targetToList, StorageProviderConfiguration.FtpActualDirectoryCreationTime);
 
             if (files != null)
             {

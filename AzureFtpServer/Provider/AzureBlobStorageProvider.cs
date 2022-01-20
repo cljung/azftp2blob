@@ -184,37 +184,31 @@ namespace AzureFtpServer.Provider {
         public bool DeleteDirectory(string path)
         {
             if (!IsValidDirectory(path))
+            {
                 return false;
+            }
 
             // cannot delete root directory
             if (path == "/")
-                return false;
-
-            IEnumerable<IListBlobItem> allFiles = _blobClient.ListBlobs( GetFullPath(path), true, options: ReqOptions);
-            foreach (var file in allFiles) 
             {
-                string uri = file.Uri.ToString();
+                return false;
+            }
 
-                CloudBlob b = _container.GetBlobReference(uri);
-                if (b != null)
+            path = path.TrimStart('/');
+            IEnumerable<IListBlobItem> allItems = _container.GetDirectoryReference(path).ListBlobs(options: ReqOptions);
+            foreach (IListBlobItem item in allItems) 
+            {
+                if (item is CloudBlockBlob file)
                 {
-                    // Need AsyncCallback?
-                    try
-                    {
-                        if ( b.Exists() )
-                        {
-                            b.Delete(); // this have shown syntoms of crashing
-                        }
-                    }
-                    catch(Exception ex)
-                    {
-                        Trace.TraceError(string.Format("Exception while DeleteDirectory {0}\r\n{1}", uri, ex)); 
-                    }
+                    file.Delete(options: ReqOptions);
                 }
-                else
+
+                if (item is CloudBlobDirectory dir)
                 {
-                    Trace.WriteLine(string.Format("Get blob reference \"{0}\" failed", uri), "Error");
-                    return false;
+                    if (!DeleteDirectory(dir.Prefix))
+                    {
+                        return false;
+                    }
                 }
             }
 
@@ -366,6 +360,9 @@ namespace AzureFtpServer.Provider {
             {
                 var blob = _container.GetBlockBlobReference(path);
                 blob.UploadFromByteArray(Array.Empty<byte>(), 0, 0);
+
+                blob.SetCreationTime();
+                blob.SetMetadata();
             }
             catch (Exception)
             {

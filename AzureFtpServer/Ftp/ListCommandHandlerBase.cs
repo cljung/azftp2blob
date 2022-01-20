@@ -5,6 +5,7 @@ using AzureFtpServer.Ftp;
 using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.Ftp.General;
 using AzureFtpServer.General;
+using AzureFtpServer.Provider;
 
 namespace AzureFtpServer.FtpCommands
 {
@@ -74,7 +75,7 @@ namespace AzureFtpServer.FtpCommands
             {
                 targetToList = FileNameHelpers.AppendDirTag(targetToList);
                 asFiles = ConnectionObject.FileSystemObject.GetFiles(targetToList);
-                asDirectories = ConnectionObject.FileSystemObject.GetDirectories(targetToList);
+                asDirectories = ConnectionObject.FileSystemObject.GetDirectories(targetToList, StorageProviderConfiguration.FtpActualDirectoryCreationTime);
             }
             else 
             {

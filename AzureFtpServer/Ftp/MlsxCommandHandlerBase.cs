@@ -25,7 +25,8 @@ namespace AzureFtpServer.FtpCommands
 
             if (isDirectory)
             {
-                entry.Append("Type=dir; ");
+                entry.Append(
+                    $"Type=dir;Size={info.GetSize()};Modify={info.GetModifiedTime():yyyyMMddHHmmss}; ");
                 string dirName = FileNameHelpers.GetDirectoryName(info.Path().ToFtpPath());
                 entry.Append(dirName);
             }

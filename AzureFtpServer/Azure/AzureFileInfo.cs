@@ -3,6 +3,7 @@ using System.Runtime.Remoting.Messaging;
 using System.Text;
 using AzureFtpServer.Ftp.FileSystem;
 using AzureFtpServer.Provider;
+using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace AzureFtpServer.Azure
@@ -33,14 +34,39 @@ namespace AzureFtpServer.Azure
             }
         }
 
-        public AzureFileInfo(CloudBlobDirectory blob)
+        private DateTimeOffset GetActualCreationTime(CloudBlobDirectory blob)
+        {
+            CloudBlob actualBlob = blob.Container.GetBlobReference(blob.Prefix);
+            if (actualBlob == null)
+            {
+                return DateTimeOffset.UtcNow;
+            }
+
+            try
+            {
+                actualBlob.FetchAttributes();
+                return actualBlob.GetCreationTime() ?? DateTimeOffset.UtcNow;
+            }
+            catch (StorageException)
+            {
+                return DateTimeOffset.UtcNow;
+            }
+        }
+
+        public AzureFileInfo(CloudBlobDirectory blob, bool readActualCreationTime)
         {
             exists = blob != null;
             if (exists)
             {
                 path = blob.Uri.ToString().Replace(blob.Container.Uri.ToString(), string.Empty);
                 isDirectory = true;
-                lastModified = DateTime.Now;
+                lastModified = DateTime.UtcNow;
+
+                if (readActualCreationTime)
+                {
+                    lastModified = GetActualCreationTime(blob).UtcDateTime;
+                }
+
                 size = 1;
             }
         }

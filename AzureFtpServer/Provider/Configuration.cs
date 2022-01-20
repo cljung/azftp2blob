@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Runtime.CompilerServices;
 using Microsoft.WindowsAzure.Storage;
 
 namespace AzureFtpServer.Provider
@@ -63,25 +64,16 @@ namespace AzureFtpServer.Provider
                 return buf;
             }
         }
-        public static bool FtpOverwriteFileOnSTOR
+
+        public static bool FtpOverwriteFileOnSTOR => CheckFlag();
+
+        public static bool FtpReplaceSlashOnDELE => CheckFlag();
+        public static bool FtpActualDirectoryCreationTime => CheckFlag();
+
+        private static bool CheckFlag([CallerMemberName] string key = null)
         {
-            get
-            {
-                string buf = ConfigurationManager.AppSettings["FtpOverwriteFileOnSTOR"];
-                if (!string.IsNullOrEmpty(buf) )
-                     return buf.ToLowerInvariant() == "true";
-                else return false;
-            }
-        }
-        public static bool FtpReplaceSlashOnDELE
-        {
-            get
-            {
-                string buf = ConfigurationManager.AppSettings["FtpReplaceSlashOnDELE"];
-                if (!string.IsNullOrEmpty(buf))
-                     return buf.ToLowerInvariant() == "true";
-                else return false;
-            }
+            string buf = ConfigurationManager.AppSettings[key];
+            return !string.IsNullOrEmpty(buf) && buf.ToLowerInvariant() == "true";
         }
         
     }

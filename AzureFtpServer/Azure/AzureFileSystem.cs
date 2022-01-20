@@ -71,11 +71,12 @@ namespace AzureFtpServer.Azure
         /// Get the directory name list in the directory 
         /// </summary>
         /// <param name="sDirPath">directory path</param>
-        /// <returns>an arry of directorynames</returns>
-        public IFileInfo[] GetDirectories(string sDirPath)
+        /// <param name="actualCreationTime">should we retrieve actual creation time (generates additional request per each directory)</param>
+        /// <returns>an array of directorynames</returns>
+        public IFileInfo[] GetDirectories(string sDirPath, bool actualCreationTime)
         {
             IEnumerable<CloudBlobDirectory> directories = _provider.GetDirectoryListing(sDirPath);
-            return directories.Select(r => new AzureFileInfo(r)).ToArray();
+            return directories.Select(r => new AzureFileInfo(r, actualCreationTime)).ToArray();
         }
 
         /// <summary>

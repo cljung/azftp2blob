@@ -28,7 +28,7 @@ namespace AzureFtpServer.Ftp.FileSystem
         IFileInfo GetDirectoryInfo(string sPath);
 
         IFileInfo[] GetFiles(string sDirPath);
-        IFileInfo[] GetDirectories(string sDirPath);
+        IFileInfo[] GetDirectories(string sDirPath, bool actualCreationTime);
 
         bool DirectoryExists(string sDirPath);
         bool FileExists(string sPath);
