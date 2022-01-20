@@ -319,8 +319,10 @@ namespace AzureFtpServer.Provider {
             // Get the full path of directory
             string prefix = GetFullPath(dirPath);
 
-            IEnumerable<CloudBlockBlob> results = _blobClient.ListBlobs(prefix, options: ReqOptions).OfType<CloudBlockBlob>();
-            
+            IEnumerable<CloudBlockBlob> results = _blobClient.ListBlobs(prefix, options: ReqOptions)
+                .OfType<CloudBlockBlob>()
+                .Where(b => !b.Name.EndsWith("/"));//filter out virtual folder files;
+
             return results;
         }
 
