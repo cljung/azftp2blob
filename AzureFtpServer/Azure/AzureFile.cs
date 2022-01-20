@@ -77,7 +77,14 @@ namespace AzureFtpServer.Azure
                 {
                     if (BlobStream.CanWrite)
                     {
-                        BlobStream.Flush();
+                        try
+                        {
+                            BlobStream.Flush();
+                        }
+                        catch (InvalidOperationException e) when (e.Message.Contains("committed"))
+                        {
+                            //Blob stream has already been committed once
+                        }
                     }
                     BlobStream.Close();
                 }
